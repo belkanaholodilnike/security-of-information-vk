@@ -26,11 +26,12 @@ function getImEditableId() {
         return null;
     }
 
+    console.log('Editable id is ' + "im_editable" + sel)
     return "im_editable" + sel;
 }
 
 function getImEditable() {
-    return document.getElementById(getImEditableId());
+    return $("#" + getImEditableId());
 }
 
 function urlChanged() {
@@ -39,13 +40,14 @@ function urlChanged() {
         return null;
     }
 
-    var messageTextEdit = document.getElementById(imEditableId);
-    messageTextEdit.textContent = "Text injected " + imEditableId;
+    //var messageTextEdit = document.getElementById(imEditableId);
+    //messageTextEdit.textContent = "Text injected " + imEditableId;
 
     replaceImEditable();
 }
 
 function sendMessage(text) {
+    console.log('sendMessage: text = ' + text);
     var imEditable = document.getElementById(getImEditableId());
     if(imEditable == null) {
         return false;
@@ -62,6 +64,15 @@ function sendMessage(text) {
  * for secure inputed text to be leaked to vk servers.
  */
 function replaceImEditable() {
-    var nativeEditable = getImEditable();
-    nativeEditable.style["display"] = "none";
+    //$("#im_peer_controls_wrap").hide();
+    var iframe_el = $("#vksecure-iframe");
+    if (iframe_el != null) {
+        iframe_el.remove();
+    }
+    var div = document.createElement('div');
+    div.id = 'vksecure-iframe';
+    var iframe = document.createElement("iframe");
+    div.appendChild(iframe);
+    iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
+    $("#im_peer_controls_wrap").after(div);
 }

@@ -12,19 +12,25 @@
 
   "page_action": {
     "default_icon": "icon.png",
-    "default_popup": "popup.html",
+    "default_popup": "frame.html",
     "default_title": "SVkMessage"
   },
 
   "content_scripts": [{
       "matches": ["http://vk.com/*"],
       "css": ["svkm.css"],
-      "js": ["libVkInject.js", "secureInjection.js"],
+      "js": ["jquery-2.1.1.min.js", "libVkInject.js", "secureInjection.js"],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": true
   }],
 
-    "permissions": [
-        "tabs"
-    ]
+  "web_accessible_resources": [
+    "frame.html",
+    "frame.js"
+  ],
+
+
+  "permissions": [
+    "tabs"
+  ]
 }

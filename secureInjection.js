@@ -11,4 +11,5 @@ window.setInterval(function () {
         urlChanged();
     }
 }, 100);
+
 window.addEventListener("load", urlChanged, false);
