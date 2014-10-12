@@ -5,15 +5,26 @@
   "description": "The extension allows to encrypt vk messages by unsymmetrical encryption.",
   "version": "0.1",
 
-  "browser_action": {
-    "default_icon": "icon.png",
-    "default_popup": "popup.html"
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
   },
+
+  "page_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html",
+    "default_title": "SVkMessage"
+  },
+
   "content_scripts": [{
       "matches": ["http://vk.com/*"],
       "css": ["svkm.css"],
-      "js": ["libVkInject.js", "secureInjection.js"]
+      "js": ["libVkInject.js", "secureInjection.js"],
+      "run_at": "document_start",
+      "all_frames": false
   }],
-  "permissions": [
-  ]
+
+    "permissions": [
+        "tabs"
+    ]
 }
