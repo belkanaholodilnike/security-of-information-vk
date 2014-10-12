@@ -12,9 +12,8 @@
   "content_scripts": [{
       "matches": ["http://vk.com/*"],
       "css": ["svkm.css"],
-      "js": ["secureInjection.js"]
+      "js": ["libVkInject.js", "secureInjection.js"]
   }],
   "permissions": [
-    ""
   ]
 }
