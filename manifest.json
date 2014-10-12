@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+
+  "name": "SVkMessage",
+  "description": "The extension allows to encrypt vk messages by unsymmetrical encryption.",
+  "version": "0.1",
+
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [{
+      "matches": ["http://vk.com/*"],
+      "css": ["svkm.css"],
+      "js": ["secureInjection.js"]
+  }],
+  "permissions": [
+    ""
+  ]
+}
