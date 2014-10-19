@@ -54,7 +54,7 @@ function sendMessage(text) {
     }
 
     imEditable.textContent = text;
-    document.getElementById("im_send").dispatchEvent(Event("click"));
+    document.getElementById("im_send").dispatchEvent(new Event("click"));
 
     return true;
 }
@@ -76,20 +76,23 @@ function replaceImEditable() {
 
   // Create out secure ui
   // Delete ui that can be there for mid
-  var iframe_el = document.getElementById("vksecure-iframe");
+  var iframe_el = document.getElementById("svkm_secure_iframe");
   if (iframe_el != null) {
     iframe_el.remove();
   }
 
   var div = document.createElement('div');
-  div.id = 'vksecure-div';
+  div.id = 'svkm_secure_div';
 
   var iframe = document.createElement("iframe");
-  iframe.id = "vksecure-iframe";
+  iframe.id = "svkm_secure_iframe";
   iframe.frameBorder = false;
 
   div.appendChild(iframe);
   iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
+  iframe.onload = function () {
+    iframe.contentWindow.document.getElementById("svkm_send_button").addEventListener("click", onSendButtonClick);
+  };
   //var im_wrap = document.getElementById("im_peer_controls_wrap");
   var im_write_form = document.getElementById("im_write_form");
   im_write_form.insertBefore(div, im_write_form.firstChild);

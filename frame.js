@@ -1,11 +1,21 @@
 /**
  * Created by dmitry on 10/13/14.
  */
-
+var intervalId;
 function onSendButtonClick() {
-    sendMessage("Hi, test!");
+  console.log("Send");
+  sendMessage(getTextFromIframe());
 }
 
-document.getElementById("send").addEventListener("click", onSendButtonClick);
-var svkm_message = document.getElementById("svkm_message");
-svkm_message.resizable = false;
+function getTextFromIframe() {
+  return getSecuredDocument().getElementById("svkm_message").textContent;
+}
+
+function getSecuredDocument() {
+  var s_frame = document.getElementById("svkm_secure_iframe");
+  if(s_frame == null) {
+    return null;
+  }
+
+  return s_frame.contentWindow.document;
+}

@@ -19,7 +19,7 @@
   "content_scripts": [{
       "matches": ["http://vk.com/*"],
       "css": ["svkm.css"],
-      "js": ["libVkInject.js", "secureInjection.js"],
+      "js": ["frame.js", "libVkInject.js", "secureInjection.js"],
       "run_at": "document_start",
       "all_frames": true
   }],

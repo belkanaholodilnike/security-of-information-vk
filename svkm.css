@@ -1,18 +1,42 @@
-#vksecure-iframe {
+#svkm_secure_iframe {
     width: 100%;
 }
 
+.svkm_im_editable {
+    background: #FFFFFF;
+    color: black;
+    border: 1px solid #C0CAD5;
+    width: 322px;
+    min-height: 40px;
+    padding: 3px 25px 5px 3px;
+    margin-bottom: 3px;
+    outline: 0;
+    -moz-border-radius: 2px;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+    line-height: 150%;
+    word-wrap: break-word;
+    cursor: text;
+}
+
+body.svkm {
+    font-family: tahoma, arial, verdana, sans-serif, Lucida Sans, serif;
+    margin: 0 6px;
+}
+
 #svkm_message {
-    width: 100%;
+    font-family: tahoma, arial, verdana, sans-serif, Lucida Sans, serif;
+    width: 322px;
     height: 40px;
     margin-top: -14px;
+    font-size: 11px;
 }
 
 #svkm_message {
     resize: none
 }
 
-#vksecure-div {
+#svkm_secure_div {
     width: 358px;
 }
 
