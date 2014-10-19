@@ -6,6 +6,6 @@ function onSendButtonClick() {
     sendMessage("Hi, test!");
 }
 
-document.getElementById("send").addEventListener("click", onSendButtonClick);
+document.getElementById("svkm_send").addEventListener("click", onSendButtonClick);
 var svkm_message = document.getElementById("svkm_message");
 svkm_message.resizable = false;

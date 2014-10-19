@@ -2,6 +2,8 @@
  * Created by melges on 12.10.2014.
  */
 
+var im_editable = null;
+
 /**
  * Function parse page url and return value of specified parameter.
  * @param name parameter name (key)
@@ -34,22 +36,30 @@ function getImEditable() {
     return document.getElementById(getImEditableId());
 }
 
+function isPersonalChatImEditableId(id) {
+    return id.match(/im_editable\d+/) != null;
+}
+
 function urlChanged() {
     var imEditableId = getImEditableId();
-    if(imEditableId == null) {
+    if (imEditableId == null) {
         return null;
     }
 
     //var messageTextEdit = document.getElementById(imEditableId);
     //messageTextEdit.textContent = "Text injected " + imEditableId;
 
-    replaceImEditable();
+    if (isPersonalChatImEditableId(imEditableId)) {
+        replaceVkImEditable();
+    } else {
+        restoreVkImEditable();
+    }
 }
 
 function sendMessage(text) {
     console.log('sendMessage: text = ' + text);
     var imEditable = document.getElementById(getImEditableId());
-    if(imEditable == null) {
+    if (imEditable == null) {
         return false;
     }
 
@@ -59,38 +69,56 @@ function sendMessage(text) {
     return true;
 }
 
+function hideVkEditable() {
+    // Disable standard vk ui
+    var vk_im_editable = getImEditable();
+    vk_im_editable.style.display = "none";
+
+    var vk_send_wrap = document.getElementById("im_send_wrap");
+    vk_send_wrap.style.display = "none";
+
+    var vk_im_texts = document.getElementById("im_texts");
+    vk_im_texts.style.display = "none";
+
+    im_editable = vk_im_editable;
+}
+
+function restoreVkImEditable() {
+    // Restore standard vk ui
+    hideSecureUi();
+
+    var vk_send_wrap = document.getElementById("im_send_wrap");
+    vk_send_wrap.style.display = "";
+
+    var vk_im_texts = document.getElementById("im_texts");
+    vk_im_texts.style.display = "";
+}
+
+function hideSecureUi() {
+    var iframe_el = document.getElementById("vksecure-iframe");
+    if (iframe_el != null) {
+        iframe_el.remove();
+    }
+}
 /**
- * Function replace vk message editable on self created text editable (it is needed)
- * for secure inputed text to be leaked to vk servers.
+ * Replaces vk message editable to custom editable inside an iframe (it is needed)
+ * so that any text entered in the secure form is not accessible to vk scripts.
  */
-function replaceImEditable() {
-  // Disable standard vk ui
-  var vk_im_editable = getImEditable();
-  vk_im_editable.style.display = "none";
+function replaceVkImEditable() {
+    // Create out secure ui
+    // Delete ui that can be there
+    hideVkEditable();
+    hideSecureUi();
+    var div = document.createElement('div');
+    div.id = 'vksecure-div';
 
-  var vk_send_wrap = document.getElementById("im_send_wrap");
-  vk_send_wrap.style.display = "none";
+    var iframe = document.createElement("iframe");
+    iframe.id = "vksecure-iframe";
+    iframe.frameBorder = false;
 
-  var vk_im_texts = document.getElementById("im_texts");
-  vk_im_texts.style.display = "none";
-
-  // Create out secure ui
-  // Delete ui that can be there for mid
-  var iframe_el = document.getElementById("vksecure-iframe");
-  if (iframe_el != null) {
-    iframe_el.remove();
-  }
-
-  var div = document.createElement('div');
-  div.id = 'vksecure-div';
-
-  var iframe = document.createElement("iframe");
-  iframe.id = "vksecure-iframe";
-  iframe.frameBorder = false;
-
-  div.appendChild(iframe);
-  iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
-  //var im_wrap = document.getElementById("im_peer_controls_wrap");
-  var im_write_form = document.getElementById("im_write_form");
-  im_write_form.insertBefore(div, im_write_form.firstChild);
+    div.appendChild(iframe);
+    iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
+    //var im_wrap = document.getElementById("im_peer_controls_wrap");
+    var im_write_form = document.getElementById("im_write_form");
+    im_write_form.insertBefore(div, im_write_form.firstChild);
 }
