@@ -1,0 +1,40 @@
+#vksecure-iframe {
+    width: 100%;
+}
+
+#svkm_message {
+    width: 100%;
+    height: 40px;
+    margin-top: -14px;
+}
+
+#svkm_message {
+    resize: none
+}
+
+#vksecure-div {
+    width: 358px;
+}
+
+.button_blue button:hover,
+.button_blue button.hover {
+    background-position: 0 -5px;
+    border-bottom-color: #4e7199;
+    cursor: pointer;
+}
+
+.button_blue button,
+.button_blue.button_disabled button:active,
+.button_blue.button_disabled button.active,
+.button_blue.button_disabled button:hover,
+.button_blue.button_disabled button.hover {
+    padding: 6px 16px;
+    border: 0;
+    border-bottom: 1px solid #496b93;
+    text-shadow: 0 1px 0 #5578A0;
+    background: #658ab0 url(/images/button_bgf.png?1) repeat-x 0 -12px;
+    color: #FFF;
+    font: Tahoma;
+    font-size: 11px;
+    height: 25px;
+}

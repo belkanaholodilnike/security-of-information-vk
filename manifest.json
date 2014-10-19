@@ -19,14 +19,16 @@
   "content_scripts": [{
       "matches": ["http://vk.com/*"],
       "css": ["svkm.css"],
-      "js": ["jquery-2.1.1.min.js", "libVkInject.js", "secureInjection.js"],
+      "js": ["libVkInject.js", "secureInjection.js"],
       "run_at": "document_start",
       "all_frames": true
   }],
 
   "web_accessible_resources": [
     "frame.html",
-    "frame.js"
+    "frame.js",
+    "svkm.css",
+    "images/button_bgf.png"
   ],
 
 

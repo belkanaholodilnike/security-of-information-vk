@@ -26,12 +26,12 @@ function getImEditableId() {
         return null;
     }
 
-    console.log('Editable id is ' + "im_editable" + sel)
+    console.log('Editable id is ' + "im_editable" + sel);
     return "im_editable" + sel;
 }
 
 function getImEditable() {
-    return $("#" + getImEditableId());
+    return document.getElementById(getImEditableId());
 }
 
 function urlChanged() {
@@ -54,7 +54,7 @@ function sendMessage(text) {
     }
 
     imEditable.textContent = text;
-    document.getElementById("im_send").dispatchEvent(new Event("click"));
+    document.getElementById("im_send").dispatchEvent(Event("click"));
 
     return true;
 }
@@ -64,15 +64,33 @@ function sendMessage(text) {
  * for secure inputed text to be leaked to vk servers.
  */
 function replaceImEditable() {
-    //$("#im_peer_controls_wrap").hide();
-    var iframe_el = $("#vksecure-iframe");
-    if (iframe_el != null) {
-        iframe_el.remove();
-    }
-    var div = document.createElement('div');
-    div.id = 'vksecure-iframe';
-    var iframe = document.createElement("iframe");
-    div.appendChild(iframe);
-    iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
-    $("#im_peer_controls_wrap").after(div);
+  // Disable standard vk ui
+  var vk_im_editable = getImEditable();
+  vk_im_editable.style.display = "none";
+
+  var vk_send_wrap = document.getElementById("im_send_wrap");
+  vk_send_wrap.style.display = "none";
+
+  var vk_im_texts = document.getElementById("im_texts");
+  vk_im_texts.style.display = "none";
+
+  // Create out secure ui
+  // Delete ui that can be there for mid
+  var iframe_el = document.getElementById("vksecure-iframe");
+  if (iframe_el != null) {
+    iframe_el.remove();
+  }
+
+  var div = document.createElement('div');
+  div.id = 'vksecure-div';
+
+  var iframe = document.createElement("iframe");
+  iframe.id = "vksecure-iframe";
+  iframe.frameBorder = false;
+
+  div.appendChild(iframe);
+  iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
+  //var im_wrap = document.getElementById("im_peer_controls_wrap");
+  var im_write_form = document.getElementById("im_write_form");
+  im_write_form.insertBefore(div, im_write_form.firstChild);
 }
