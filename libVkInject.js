@@ -83,14 +83,39 @@ function hideVkEditable() {
   im_editable = vk_im_editable;
 }
 
+function getVkWriteForm() {
+    return document.getElementById("im_write_form");
+}
+function showVkSecurityWarningBox() {
+    var vk_im_write_form = getVkWriteForm();
+    vk_im_write_form.className = "unsecure-form";
+    div = document.createElement('div');
+    div.innerHTML = "Внимание! Шифрование переписки не ведется";
+    div.id = "security-status-label";
+    div.className = "security-status-label";
+    vk_im_write_form.insertBefore(div, vk_im_write_form.firstChild);
+}
+
+function hideVkSecurityWarningBox() {
+    var vk_im_write_form = getVkWriteForm();
+    vk_im_write_form.className = "";
+    var warningBox = document.getElementById("security-status-label");
+    if (warningBox) {
+        warningBox.parentNode.removeChild(warningBox);
+    }
+}
+
 function restoreVkImEditable() {
   // Restore standard vk ui
   hideSecureUi();
+  hideVkSecurityWarningBox();
   var vk_send_wrap = document.getElementById("im_send_wrap");
   vk_send_wrap.style.display = "";
 
   var vk_im_texts = document.getElementById("im_texts");
   vk_im_texts.style.display = "";
+
+  showVkSecurityWarningBox();
 }
 
 function hideSecureUi() {
@@ -101,10 +126,11 @@ function hideSecureUi() {
 }
 
 /**
- * Function replace vk message editable on self created text editable (it is needed)
- * for secure inputed text to be leaked to vk servers.
+ * Function replaces vk message editable with secure input field inside an iframe
  */
 function replaceVkImEditable() {
+  hideVkSecurityWarningBox();
+
   // Disable standard vk ui
   var vk_im_editable = getImEditable();
   vk_im_editable.style.display = "none";

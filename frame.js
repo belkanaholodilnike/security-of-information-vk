@@ -1,9 +1,13 @@
 /**
  * Created by dmitry on 10/13/14.
  */
-var intervalId;
+
 function onSendButtonClick() {
   console.log("Send");
+  chrome.runtime.sendMessage({eventName: "messageSent", message: getTextFromIframe()},
+      function(response) {
+      console.log(response.farewell);
+  });
   sendMessage(getTextFromIframe());
 }
 

@@ -6,7 +6,6 @@
     background: #FFFFFF;
     color: black;
     border: 1px solid #C0CAD5;
-    width: 322px;
     min-height: 40px;
     padding: 3px 25px 5px 3px;
     margin-bottom: 3px;
@@ -26,7 +25,7 @@ body.svkm {
 
 #svkm_message {
     font-family: tahoma, arial, verdana, sans-serif, Lucida Sans, serif;
-    width: 322px;
+    width: 90%;
     height: 40px;
     margin-top: -14px;
     font-size: 11px;
@@ -61,4 +60,23 @@ body.svkm {
     font: Tahoma;
     font-size: 11px;
     height: 25px;
+}
+
+.unsecure-form {
+    background-color: rgb(237, 194, 194);
+    border: 1px solid red;
+    color: red;
+    padding: 4px;
+ }
+
+.secured-form {
+    background-color: rgb(179, 237, 162);
+    border: 1px solid #075100;
+    color: #075100;
+    padding: 4px;
+}
+
+.security-status-label {
+    padding-bottom: 4px;
+    font-size: 12px;
 }
