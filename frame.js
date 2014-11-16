@@ -8,7 +8,7 @@ function onSendButtonClick() {
       function(response) {
       console.log(response.farewell);
   });
-  sendMessage(getTextFromIframe());
+  svkm.basic.sendMessage(getTextFromIframe());
 }
 
 function getTextFromIframe() {

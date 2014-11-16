@@ -8,8 +8,8 @@ var storedUrl = window.location.href;
 window.setInterval(function () {
     if (window.location.href != storedUrl) {
         storedUrl = window.location.href;
-        urlChanged();
+        svkm.basic.urlChanged();
     }
 }, 100);
 
-window.addEventListener("load", urlChanged, false);
+window.addEventListener("load", svkm.basic.urlChanged, false);
