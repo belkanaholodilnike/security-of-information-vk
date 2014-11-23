@@ -4,6 +4,7 @@
 
 function onSendButtonClick() {
   console.log("Send");
+  console.log(probablyPrime(new Decimal("11111111111111111111111")));
   chrome.runtime.sendMessage({eventName: "messageSent", message: getTextFromIframe()},
       function(response) {
       console.log(response.farewell);

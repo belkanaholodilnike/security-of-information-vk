@@ -21,7 +21,9 @@ function probablyPrime(n, k) {
 
   WitnessLoop: do {
     // A base between 2 and n - 2
-    var x = Decimal.random().toNearest(n.minus(3)).floor().plus(2).toPower(d).modulo(n);
+    //var x = Decimal.random().toNearest(n.minus(3)).floor().plus(2).toPower(d).modulo(n);
+    var x = Decimal.random();
+    var x = Decimal.random().times(n.minus(3)).floor().plus(2).pow(d).mod(n);
     //var x = Math.pow(2 + Math.floor(Math.random() * (n - 3)), d) % n;
 
     if (x.equals(1) || x.equals(n.minus(1)))

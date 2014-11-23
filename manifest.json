@@ -17,9 +17,10 @@
   },
 
   "content_scripts": [{
-      "matches": ["http://vk.com/*"],
+      "matches": ["http://vk.com/*", "https://vk.com/*"],
       "css": ["svkm.css"],
-      "js": ["bignumber.min.js", "decimal.min.js", "aes.js", "sha3.js", "random.js", "elgamal.js", "libVkInject.js", "secureInjection.js", "frame.js"],
+      "js": ["decimal.min.js", "aes.js", "sha3.js", "random.js", "elgamal.js",
+             "libVkInject.js", "secureInjection.js", "frame.js"],
       "run_at": "document_start",
       "all_frames": true
   }],
