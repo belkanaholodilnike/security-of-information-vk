@@ -80,3 +80,13 @@ body.svkm {
     padding-bottom: 4px;
     font-size: 12px;
 }
+
+div.button_blue {
+    display: inline-block;
+}
+
+button#svkm_exchange_keys_button:disabled {
+    background: #B5B5B5;
+    color: #888;
+    text-shadow: 0 0px 0;
+}

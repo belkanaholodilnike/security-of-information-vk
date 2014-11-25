@@ -10,6 +10,12 @@ svkm = function () {
 svkm.basic = function () {
 
 }
+svkm.crypto = function () {
+
+}
+
+var MESSAGE_TAG_KEY_EXCHANGE_INIT = '__VKSEC:EXCH_KEYS:';
+var MESSAGE_TAG_ENCRYPTED = '__VKSEC:ENCRYPTED:';
 
 /**
  * Function parse page url and return value of specified parameter.
@@ -63,6 +69,19 @@ svkm.basic.urlChanged = function () {
   }
 }
 
+svkm.crypto.encrypt = function (msg, key) {
+  return MESSAGE_TAG_ENCRYPTED + CryptoJS.AES.encrypt(msg, key);
+}
+
+svkm.basic.executeWithUserKey = function (func) {
+  chrome.runtime.sendMessage({eventName: "getKeyForUser", id:svkm.basic.getParameterByName("sel")},
+    function(response) {
+      if (response.result == "yes") {
+        return func(response.key);
+      }
+    });
+}
+
 svkm.basic.sendMessage = function (text) {
     console.log('sendMessage: text = ' + text);
     var imEditable = document.getElementById(svkm.basic.getImEditableId());
@@ -70,8 +89,10 @@ svkm.basic.sendMessage = function (text) {
         return false;
     }
 
-    imEditable.textContent = text;
-    document.getElementById("im_send").dispatchEvent(new Event("click"));
+    svkm.basic.executeWithUserKey(function(key) {
+      imEditable.textContent = svkm.crypto.encrypt(text, key);
+      document.getElementById("im_send").dispatchEvent(new Event("click"));
+    });
 
     return true;
 }
@@ -132,6 +153,18 @@ svkm.basic.hideSecureUi = function () {
   }
 }
 
+svkm.basic.exchangeKeys = function () {
+  console.log("Keys exchanged");
+  chrome.runtime.sendMessage({eventName: "getMyKey"},
+    function(response) {
+      svkm.basic.sendMessage(MESSAGE_TAG_KEY_EXCHANGE_INIT + response.key);
+    });
+}
+
+svkm.basic.getExchangeKeysButton = function (iframe) {
+  return iframe.contentWindow.document.getElementById("svkm_exchange_keys_button");
+}
+
 /**
  * Function replaces vk message editable with secure input field inside an iframe
  */
@@ -154,7 +187,7 @@ svkm.basic.replaceVkImEditable = function () {
     vk_im_texts.style.display = "none";
   }
 
-  // Create out secure ui
+  // Create our secure ui
   // Delete ui that can be there for mid
   var iframe_el = document.getElementById("svkm_secure_iframe");
   if (iframe_el != null) {
@@ -173,6 +206,15 @@ svkm.basic.replaceVkImEditable = function () {
   iframe.onload = function () {
     iframe.contentWindow.document.getElementById("svkm_send_button")
       .addEventListener("click", onSendButtonClick);
+    chrome.runtime.sendMessage({eventName: "getKeyForUser", id:svkm.basic.getParameterByName("sel")},
+      function(response) {
+        if (response.result == "no") {
+          svkm.basic.getExchangeKeysButton(iframe).disabled = false;
+          svkm.basic.getExchangeKeysButton(iframe).onclick = svkm.basic.exchangeKeys;
+        } else {
+          svkm.basic.getExchangeKeysButton(iframe).disabled = true;
+        }
+      });
   };
   //var im_wrap = document.getElementById("im_peer_controls_wrap");
   var im_write_form = document.getElementById("im_write_form");

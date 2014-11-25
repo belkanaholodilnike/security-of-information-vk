@@ -10,10 +10,15 @@ function onSendButtonClick() {
       console.log(response.farewell);
   });
   svkm.basic.sendMessage(getTextFromIframe());
+  setTextToIframe("");
 }
 
 function getTextFromIframe() {
   return getSecuredDocument().getElementById("svkm_message").textContent;
+}
+
+function setTextToIframe(str) {
+  getSecuredDocument().getElementById("svkm_message").textContent = str;
 }
 
 function getSecuredDocument() {
