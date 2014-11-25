@@ -13,5 +13,5 @@ svkm.keystorage.getKeyForUser = function(id) {
 
 svkm.keystorage.getMyKey = function() {
   // TODO
-  return 'passhprase';
+  return 'passphrase';
 }

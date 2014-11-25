@@ -14,7 +14,23 @@ svkm.crypto = function () {
 
 }
 
-var MESSAGE_TAG_KEY_EXCHANGE_INIT = '__VKSEC:EXCH_KEYS:';
+svkm.basic.executeWithUserKey = function (func) {
+  chrome.runtime.sendMessage({eventName: "getMyKey", id:svkm.basic.getParameterByName("sel")},
+    function(response) {
+      return func(response.key);
+    });
+}
+
+svkm.basic.executeWithMyKey = function (func) {
+  chrome.runtime.sendMessage({eventName: "getKeyForUser", id:svkm.basic.getParameterByName("sel")},
+    function(response) {
+      if (response.result == "yes") {
+        return func(response.key);
+      }
+    });
+}
+
+var MESSAGE_TAG_KEY_REQUEST = '__VKSEC:REQUEST_KEY';
 var MESSAGE_TAG_ENCRYPTED = '__VKSEC:ENCRYPTED:';
 
 /**
@@ -53,6 +69,61 @@ svkm.basic.isPersonalChatImEditableId = function (id) {
   return id.match(/im_editable\d+/) != null;
 }
 
+svkm.basic.doForAllMessages = function (callback) {
+  var msgs = document.getElementsByClassName("im_msg_text");
+  for (var i = 0; i < msgs.length; i++) {
+    callback(msgs[i]);
+  }
+}
+
+svkm.basic.registerForNewMessageCallback = function (callback) {
+  var observeDOM = (function(){
+    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
+      eventListenerSupported = window.addEventListener;
+
+    return function(obj, callback){
+      if( MutationObserver ){
+        // define a new observer
+        var obs = new MutationObserver(function(mutations, observer){
+          if( mutations[0].addedNodes.length || mutations[0].removedNodes.length )
+            callback();
+        });
+        // have the observer observe foo for changes in children
+        obs.observe( obj, { childList:true, subtree:true });
+      }
+      else if( eventListenerSupported ){
+        obj.addEventListener('DOMNodeInserted', callback, false);
+        obj.addEventListener('DOMNodeRemoved', callback, false);
+      }
+    }
+  })();
+
+  observeDOM( document.getElementById('im_rows'), function() {
+    console.log('dom changed');
+    svkm.basic.doForAllMessages(callback);
+  });
+}
+
+var lastProcessedMsgId = null;
+
+svkm.basic.getMessageId = function (msgElement) {
+  var id = msgElement.parentElement.parentElement.parentElement.id;
+  return id;
+};
+
+svkm.basic.processMsg = function (msgElement) {
+  var text = msgElement.textContent;
+  if (text.lastIndexOf(MESSAGE_TAG_ENCRYPTED, 0) === 0) {
+    // TODO: decrypt message
+    var msg = text.substr(MESSAGE_TAG_ENCRYPTED.length);
+    svkm.basic.executeWithMyKey(function (myPrivateKey) {
+      msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
+    });
+  } else if (text.lastIndexOf(MESSAGE_TAG_KEY_REQUEST, 0) === 0) {
+    // TODO: show yes/no message box, if yes, send the key, if not, send refusing message
+  }
+};
+
 svkm.basic.urlChanged = function () {
     var imEditableId = svkm.basic.getImEditableId();
     if(imEditableId == null) {
@@ -63,23 +134,28 @@ svkm.basic.urlChanged = function () {
     //messageTextEdit.textContent = "Text injected " + imEditableId;
 
   if (svkm.basic.isPersonalChatImEditableId(imEditableId)) {
+    lastProcessedMsgId = null;
     svkm.basic.replaceVkImEditable();
+    svkm.basic.doForAllMessages(function(msgElement) {
+      svkm.basic.processMsg(msgElement);
+      var msgId = svkm.basic.getMessageId(msgElement);
+      lastProcessedMsgId = msgId;
+    });
+    svkm.basic.registerForNewMessageCallback(function(msgElement) {
+      var msgId = svkm.basic.getMessageId(msgElement);
+      if (lastProcessedMsgId == null || msgId > lastProcessedMsgId) {
+        svkm.basic.processMsg(msgElement);
+        lastProcessedMsgId = msgId;
+      }
+    });
   } else {
     svkm.basic.restoreVkImEditable();
   }
 }
 
 svkm.crypto.encrypt = function (msg, key) {
-  return MESSAGE_TAG_ENCRYPTED + CryptoJS.AES.encrypt(msg, key);
-}
-
-svkm.basic.executeWithUserKey = function (func) {
-  chrome.runtime.sendMessage({eventName: "getKeyForUser", id:svkm.basic.getParameterByName("sel")},
-    function(response) {
-      if (response.result == "yes") {
-        return func(response.key);
-      }
-    });
+  // TODO: encrypt message
+  return MESSAGE_TAG_ENCRYPTED + CryptoJS.AES.encrypt(msg, key).toString();
 }
 
 svkm.basic.sendMessage = function (text) {
@@ -157,7 +233,7 @@ svkm.basic.exchangeKeys = function () {
   console.log("Keys exchanged");
   chrome.runtime.sendMessage({eventName: "getMyKey"},
     function(response) {
-      svkm.basic.sendMessage(MESSAGE_TAG_KEY_EXCHANGE_INIT + response.key);
+      svkm.basic.sendMessage(MESSAGE_TAG_KEY_REQUEST + response.key);
     });
 }
 
