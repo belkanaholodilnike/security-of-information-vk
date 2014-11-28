@@ -4,15 +4,10 @@
 
 var im_editable = null;
 
-svkm = function () {
-
-}
-svkm.basic = function () {
-
-}
-svkm.crypto = function () {
-
-}
+svkm = function () {}
+svkm.basic = function () {}
+svkm.ui = function () {}
+svkm.crypto = function () {}
 
 svkm.basic.executeWithUserKey = function (func) {
   chrome.runtime.sendMessage({eventName: "getMyKey", id:svkm.basic.getParameterByName("sel")},
@@ -22,7 +17,7 @@ svkm.basic.executeWithUserKey = function (func) {
 }
 
 svkm.basic.executeWithMyKey = function (func) {
-  chrome.runtime.sendMessage({eventName: "getKeyForUser", id:svkm.basic.getParameterByName("sel")},
+  chrome.runtime.sendMessage({eventName: "getMyKey"},
     function(response) {
       if (response.result == "yes") {
         return func(response.key);
@@ -31,6 +26,8 @@ svkm.basic.executeWithMyKey = function (func) {
 }
 
 var MESSAGE_TAG_KEY_REQUEST = '__VKSEC:REQUEST_KEY';
+var MESSAGE_TAG_KEY_RESPONSE = '__VKSEC:RESPONSE_KEY';
+var MESSAGE_TAG_KEY_REFUSE = '__VKSEC:REFUSE_KEY';
 var MESSAGE_TAG_ENCRYPTED = '__VKSEC:ENCRYPTED:';
 
 /**
@@ -104,25 +101,66 @@ svkm.basic.registerForNewMessageCallback = function (callback) {
   });
 }
 
-var lastProcessedMsgId = null;
-
 svkm.basic.getMessageId = function (msgElement) {
   var id = msgElement.parentElement.parentElement.parentElement.id;
   return id;
 };
 
-svkm.basic.processMsg = function (msgElement) {
+svkm.basic.processMsg = function (msgElement, newMsg) {
   var text = msgElement.textContent;
+
+  function hideMessageElement(msgElement) {
+    msgElement.parentElement.parentElement.parentElement.style.display = 'none';
+  }
+
+  // On encrypted message
   if (text.lastIndexOf(MESSAGE_TAG_ENCRYPTED, 0) === 0) {
-    // TODO: decrypt message
     var msg = text.substr(MESSAGE_TAG_ENCRYPTED.length);
     svkm.basic.executeWithMyKey(function (myPrivateKey) {
+      // TODO: decrypt message
       msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
     });
+  } else if (text.lastIndexOf(MESSAGE_TAG_KEY_RESPONSE, 0) === 0) {
+    // On key response
+
+    hideMessageElement(msgElement);
+    if (newMsg) {
+      var key = text.substr(MESSAGE_TAG_KEY_RESPONSE.length);
+      var userId = svkm.basic.getParameterByName("sel");
+      chrome.runtime.sendMessage({eventName: "insertKeyForUser", userId: userId, key: key},
+        function (response) {
+          svkm.ui.enableSendingButton(svkm.ui.getSecureIframe());
+        });
+      console.log("Received key " + key + " for user " + userId);
+    }
+  } else if (text.lastIndexOf(MESSAGE_TAG_KEY_REFUSE, 0) === 0) {
+    // On key refusal
+
+    hideMessageElement(msgElement);
+    if (newMsg) {
+      alert("Собеседник отказался пересылать вам свой открытый ключ. Пока ваш собеседник не перешлет вам открытый " +
+        "ключ, вы не сможете вести зашифрованную переписку.");
+    }
   } else if (text.lastIndexOf(MESSAGE_TAG_KEY_REQUEST, 0) === 0) {
-    // TODO: show yes/no message box, if yes, send the key, if not, send refusing message
+    // On key request
+
+    hideMessageElement(msgElement);
+    if (newMsg) {
+      if (confirm('Собеседник запросил ваш открытый ключ, что позволит ему шифровать сообщения, посылаемые вам. ' +
+        'Разрешить передачу ключа?')) {
+        svkm.basic.executeWithMyKey(function (myKey) {
+          svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKey);
+          console.log("Sent my public key to the partner");
+        })
+      } else {
+        svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REFUSE);
+      }
+    }
   }
 };
+
+var lastProcessedMsgId = null;
+var processedMsgs = {};
 
 svkm.basic.urlChanged = function () {
     var imEditableId = svkm.basic.getImEditableId();
@@ -137,16 +175,19 @@ svkm.basic.urlChanged = function () {
     lastProcessedMsgId = null;
     svkm.basic.replaceVkImEditable();
     svkm.basic.doForAllMessages(function(msgElement) {
-      svkm.basic.processMsg(msgElement);
+      svkm.basic.processMsg(msgElement, false);
       var msgId = svkm.basic.getMessageId(msgElement);
-      lastProcessedMsgId = msgId;
+      if (lastProcessedMsgId == null || lastProcessedMsgId < msgId)
+        lastProcessedMsgId = msgId;
+      processedMsgs[msgId] = true;
     });
     svkm.basic.registerForNewMessageCallback(function(msgElement) {
       var msgId = svkm.basic.getMessageId(msgElement);
-      if (lastProcessedMsgId == null || msgId > lastProcessedMsgId) {
-        svkm.basic.processMsg(msgElement);
-        lastProcessedMsgId = msgId;
-      }
+      if (processedMsgs[msgId])
+        return;
+      var newMsg = (lastProcessedMsgId == null || msgId > lastProcessedMsgId);
+      svkm.basic.processMsg(msgElement, newMsg);
+      processedMsgs[msgId] = true;
     });
   } else {
     svkm.basic.restoreVkImEditable();
@@ -171,6 +212,17 @@ svkm.basic.sendMessage = function (text) {
     });
 
     return true;
+}
+
+svkm.basic.sendMessageUnencrypted = function (text) {
+  console.log('sendMessage: text = ' + text);
+  var imEditable = document.getElementById(svkm.basic.getImEditableId());
+  if(imEditable == null) {
+    return false;
+  }
+  imEditable.textContent = text;
+  document.getElementById("im_send").dispatchEvent(new Event("click"));
+  return true;
 }
 
 svkm.basic.hideVkEditable = function (){
@@ -233,12 +285,28 @@ svkm.basic.exchangeKeys = function () {
   console.log("Keys exchanged");
   chrome.runtime.sendMessage({eventName: "getMyKey"},
     function(response) {
-      svkm.basic.sendMessage(MESSAGE_TAG_KEY_REQUEST + response.key);
+      svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REQUEST + response.key);
     });
 }
 
 svkm.basic.getExchangeKeysButton = function (iframe) {
   return iframe.contentWindow.document.getElementById("svkm_exchange_keys_button");
+}
+
+svkm.basic.getSendMessageButton = function(iframe) {
+  return iframe.contentWindow.document.getElementById("svkm_send_button");
+}
+
+svkm.ui.disableSendingButton = function (iframe) {
+  svkm.basic.getSendMessageButton(iframe).disabled = true;
+};
+
+svkm.ui.enableSendingButton = function (iframe) {
+  svkm.basic.getSendMessageButton(iframe).disabled = false;
+};
+
+svkm.ui.getSecureIframe = function() {
+  return document.getElementById("svkm_secure_iframe");
 }
 
 /**
@@ -265,7 +333,7 @@ svkm.basic.replaceVkImEditable = function () {
 
   // Create our secure ui
   // Delete ui that can be there for mid
-  var iframe_el = document.getElementById("svkm_secure_iframe");
+  var iframe_el = svkm.ui.getSecureIframe();
   if (iframe_el != null) {
     iframe_el.remove();
   }
@@ -280,15 +348,15 @@ svkm.basic.replaceVkImEditable = function () {
   div.appendChild(iframe);
   iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
   iframe.onload = function () {
-    iframe.contentWindow.document.getElementById("svkm_send_button")
-      .addEventListener("click", onSendButtonClick);
+    svkm.basic.getSendMessageButton(iframe).addEventListener("click", onSendButtonClick);
+    svkm.basic.getExchangeKeysButton(iframe).addEventListener("click", svkm.basic.exchangeKeys);
     chrome.runtime.sendMessage({eventName: "getKeyForUser", id:svkm.basic.getParameterByName("sel")},
       function(response) {
+        console.log(response);
         if (response.result == "no") {
-          svkm.basic.getExchangeKeysButton(iframe).disabled = false;
-          svkm.basic.getExchangeKeysButton(iframe).onclick = svkm.basic.exchangeKeys;
+          svkm.ui.disableSendingButton(iframe);
         } else {
-          svkm.basic.getExchangeKeysButton(iframe).disabled = true;
+          svkm.ui.enableSendingButton(iframe);
         }
       });
   };

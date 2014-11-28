@@ -19,14 +19,19 @@ chrome.runtime.onMessage.addListener(
         if (request.eventName == 'messageSent') {
             messageLog.push(request.message);
         } else if (request.eventName == 'getKeyForUser') {
-          userKey = svkm.keystorage.getKeyForUser(request.id);
-          if (userKey) {
-            sendResponse({result: 'yes', key: userKey});
-          } else {
-            sendResponse({result: 'no'});
-          }
+          svkm.keystorage.withKeyForUser(request.id,
+            function(userKey) {
+              if (userKey != null) {
+                sendResponse({result: 'yes', key: userKey});
+              } else {
+                sendResponse({result: 'no'});
+              }
+            });
         } else if (request.eventName == 'getMyKey') {
-          sendResponse({key: svkm.keystorage.getMyKey()});
+          sendResponse({result: 'yes', key: svkm.keystorage.getMyKey()});
+        } else if (request.eventName == 'insertKeyForUser') {
+          svkm.keystorage.insertKeyForUser(request.userId, request.key);
+          sendResponse({});
         }
     });
 

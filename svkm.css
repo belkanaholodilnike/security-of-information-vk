@@ -26,7 +26,7 @@ body.svkm {
 #svkm_message {
     font-family: tahoma, arial, verdana, sans-serif, Lucida Sans, serif;
     width: 90%;
-    height: 40px;
+    min-height: 40px;
     margin-top: -14px;
     font-size: 11px;
 }
@@ -62,6 +62,12 @@ body.svkm {
     height: 25px;
 }
 
+button.button_blue:disabled {
+    background: #B5B5B5;
+    color: #888;
+    text-shadow: 0 0px 0;
+}
+
 .unsecure-form {
     background-color: rgb(237, 194, 194);
     border: 1px solid red;
@@ -83,10 +89,4 @@ body.svkm {
 
 div.button_blue {
     display: inline-block;
-}
-
-button#svkm_exchange_keys_button:disabled {
-    background: #B5B5B5;
-    color: #888;
-    text-shadow: 0 0px 0;
 }
