@@ -2,11 +2,11 @@
   "manifest_version": 2,
 
   "name": "SVkMessage",
-  "description": "The extension allows to encrypt vk messages by unsymmetrical encryption.",
+  "description": "The extension allows to encrypt vk messages by asymmetrical encryption.",
   "version": "0.1",
 
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["keystorage.js", "background.js"],
     "persistent": false
   },
 
@@ -33,6 +33,7 @@
 
 
   "permissions": [
-    "tabs"
+    "tabs",
+    "storage"
   ]
 }

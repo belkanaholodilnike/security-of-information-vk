@@ -14,10 +14,15 @@ function onSendButtonClick() {
     svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число составное");
   }
 
+  setTextToIframe("");
 }
 
 function getTextFromIframe() {
   return getSecuredDocument().getElementById("svkm_message").textContent;
+}
+
+function setTextToIframe(str) {
+  getSecuredDocument().getElementById("svkm_message").textContent = str;
 }
 
 function getSecuredDocument() {
