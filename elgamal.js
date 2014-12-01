@@ -1,7 +1,53 @@
 /**
  * Created by melges on 22.11.2014.
  */
-function probablyPrime(n, k) {
+
+svkm.crypto = function () {
+
+}
+
+svkm.crypto.math = function () {
+
+}
+
+svkm.crypto.math.decompositionOnTwoPower = function (n) {
+  var wn = new Decimal(n);
+  var powers = [];
+  var counter = 0;
+  while(wn > 1) {
+    if(wn.modulo(2) == 1)
+      powers.push(counter);
+    counter++;
+    wn = wn.dividedBy(2).floor();
+  }
+
+  // Add last one bit
+  powers.push(counter);
+
+  return powers;
+}
+
+svkm.crypto.math.powByMod = function (x, y, t) {
+  var powers = svkm.crypto.math.decompositionOnTwoPower(y);
+
+  var result = new Decimal(1);
+  for(var key in powers) {
+    var tmpResult = new Decimal(x);
+    for(var i = 0; i < powers[key]; i++) {
+      tmpResult = tmpResult.pow(2);
+      tmpResult = tmpResult.modulo(t);
+    }
+
+    result = result.times(tmpResult);
+    result = result.modulo(t);
+  }
+
+  return result.modulo(t);
+};
+
+console.log(svkm.crypto.math.decompositionOnTwoPower(321));
+
+svkm.crypto.math.isProbablePrime = function (n, k) {
   n = new Decimal(n);
   if(!(n instanceof Decimal)) {
     return false;
@@ -9,7 +55,7 @@ function probablyPrime(n, k) {
 
   if (n.equals(2) || n.equals(3))
     return true;
-  if (n.modulo(2) == 0 || n.lessThan(2))
+  if (n.modulo(2).equals(0) || n.lessThan(2))
     return false;
 
   // Write (n - 1) as 2^s * d
@@ -23,14 +69,17 @@ function probablyPrime(n, k) {
     // A base between 2 and n - 2
     //var x = Decimal.random().toNearest(n.minus(3)).floor().plus(2).toPower(d).modulo(n);
     var x = Decimal.random();
-    var x = Decimal.random().times(n.minus(3)).floor().plus(2).pow(d).mod(n);
+    x = x.times(n.minus(3));
+    x = x.floor();
+    x = x.plus(2);
+    x = svkm.crypto.math.powByMod(x, d, n);
     //var x = Math.pow(2 + Math.floor(Math.random() * (n - 3)), d) % n;
 
     if (x.equals(1) || x.equals(n.minus(1)))
       continue;
 
     for (var i = s - 1; i >= 0; --i) {
-      x = x.toNearest(x).modulo(n);
+      x = x.pow(2).modulo(n);
       if (x.equals(1))
         return false;
       if (x.equals(n.minus(1)))
@@ -41,25 +90,6 @@ function probablyPrime(n, k) {
   } while (--k);
 
   return true;
-}
-
-svkm.crypto.basic.isProbablePrime = function (t) {
-  var i, x = this.abs();
-  if (x.t == 1 && x[0] <= lowprimes[lowprimes.length - 1]) {
-    for (i = 0; i < lowprimes.length; ++i)
-      if (x[0] == lowprimes[i]) return true;
-    return false;
-  }
-  if (x.isEven()) return false;
-  i = 1;
-  while (i < lowprimes.length) {
-    var m = lowprimes[i],
-        j = i + 1;
-    while (j < lowprimes.length && m < lplim) m *= lowprimes[j++];
-    m = x.modInt(m);
-    while (i < j) if (m % lowprimes[i++] == 0) return false;
-  }
-  return x.millerRabin(t);
 };
 
 svkm.crypto.elgamal.generateKeyPair = function () {

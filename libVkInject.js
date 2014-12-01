@@ -4,9 +4,6 @@
 
 var im_editable = null;
 
-svkm = function () {
-
-}
 svkm.basic = function () {
 
 }

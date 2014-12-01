@@ -3,13 +3,17 @@
  */
 
 function onSendButtonClick() {
-  console.log("Send");
-  console.log(probablyPrime(new Decimal("11111111111111111111111")));
   chrome.runtime.sendMessage({eventName: "messageSent", message: getTextFromIframe()},
       function(response) {
       console.log(response.farewell);
   });
-  svkm.basic.sendMessage(getTextFromIframe());
+  var text = getTextFromIframe();
+  if(svkm.crypto.math.isProbablePrime(new Decimal(text))) {
+    svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число вероятно простое");
+  } else {
+    svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число составное");
+  }
+
 }
 
 function getTextFromIframe() {
