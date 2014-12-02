@@ -14,7 +14,7 @@ function onSendButtonClick() {
     svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число составное");
   }
 
-  setTextToIframe("");
+  setTextToIframe(svkm.crypto.elgamal.generateKeyPair());
 }
 
 function getTextFromIframe() {

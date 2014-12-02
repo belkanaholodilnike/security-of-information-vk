@@ -2,14 +2,6 @@
  * Created by melges on 22.11.2014.
  */
 
-svkm.crypto = function () {
-
-}
-
-svkm.crypto.math = function () {
-
-}
-
 svkm.crypto.math.decompositionOnTwoPower = function (n) {
   var wn = new Decimal(n);
   var powers = [];
@@ -25,7 +17,7 @@ svkm.crypto.math.decompositionOnTwoPower = function (n) {
   powers.push(counter);
 
   return powers;
-}
+};
 
 svkm.crypto.math.powByMod = function (x, y, t) {
   var powers = svkm.crypto.math.decompositionOnTwoPower(y);
@@ -42,10 +34,8 @@ svkm.crypto.math.powByMod = function (x, y, t) {
     result = result.modulo(t);
   }
 
-  return result.modulo(t);
+  return result;
 };
-
-console.log(svkm.crypto.math.decompositionOnTwoPower(321));
 
 svkm.crypto.math.isProbablePrime = function (n, k) {
   n = new Decimal(n);
@@ -79,7 +69,7 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
       continue;
 
     for (var i = s - 1; i >= 0; --i) {
-      x = x.pow(2).modulo(n);
+      x = svkm.crypto.math.powByMod(x, new Decimal(2), n);
       if (x.equals(1))
         return false;
       if (x.equals(n.minus(1)))
@@ -93,5 +83,10 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
 };
 
 svkm.crypto.elgamal.generateKeyPair = function () {
-  var randomSeq = random(2048);
+  var randomSeq = svkm.crypto.math.randomNum(2048);
+  while(!svkm.crypto.math.isProbablePrime(randomSeq, 30)) {
+    randomSeq.plus(Decimal.ONE);
+  }
+
+  console.log(randomSeq.toString());
 };

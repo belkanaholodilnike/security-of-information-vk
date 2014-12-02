@@ -14,7 +14,7 @@ function mouseMoved(docElement) {
  * @return string string or null if we couldn't generate string with
  * specified length.
  */
-function random(num) {
+svkm.crypto.math.random = function (num) {
   if(mouseCoordBuffer.length < num * (Math.floor(num / 512) + 1)) {
     return null;
   }
@@ -27,7 +27,22 @@ function random(num) {
   }
 
   return generatedString;
-}
+};
+
+svkm.crypto.math.randomNum = function (num) {
+  if(mouseCoordBuffer.length < num * (Math.floor(num / 512) + 1)) {
+    return null;
+  }
+
+  // SHA-3 generate 512 bit num, we need to repeat hashing for generate several sequences
+  var generatedString = "";
+  for(var i = 0; i < Math.floor(num / 512) + 1; i++) {
+    generatedString += CryptoJS.SHA3(mouseCoordBuffer.splice(0, num).toString())
+        .toString(CryptoJS.enc.Hex);
+  }
+
+  return new Decimal(generatedString, 16);
+};
 
 
 document.addEventListener("mousemove", mouseMoved);

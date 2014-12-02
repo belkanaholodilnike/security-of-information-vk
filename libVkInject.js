@@ -35,7 +35,7 @@ svkm.basic.getParameterByName = function (name) {
     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(location.search);
     return results === null ? null : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
+};
 
 /**
  * Function generate id of messages editable form.
@@ -66,7 +66,7 @@ svkm.basic.doForAllMessages = function (callback) {
   for (var i = 0; i < msgs.length; i++) {
     callback(msgs[i]);
   }
-}
+};
 
 svkm.basic.registerForNewMessageCallback = function (callback) {
   var observeDOM = (function(){
@@ -94,7 +94,7 @@ svkm.basic.registerForNewMessageCallback = function (callback) {
     console.log('dom changed');
     svkm.basic.doForAllMessages(callback);
   });
-}
+};
 
 svkm.basic.getMessageId = function (msgElement) {
   var id = msgElement.parentElement.parentElement.parentElement.id;
