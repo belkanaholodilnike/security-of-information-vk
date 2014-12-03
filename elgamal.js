@@ -2,6 +2,13 @@
  * Created by melges on 22.11.2014.
  */
 
+generatedPrimeNumbers = [new Decimal("64634012142622014601429753377339903920888205339430968064260690855049310277735" +
+  "781786394402823045826927377435921843796038988239118300981842190176304772896566241261754734601992183500395500779304" +
+  "213592115276768135136553584437285239512323676188676952340941163291704072610085775151783082131617215104798247860771" +
+  "043828666779336684841369949573129138989712352070652644116155611318662052385416920628300517185728354233451887207436" +
+  "923714715196702304603291808807395226466574462454251369421640419450314203453862646939357085161313395870091994536705" +
+  "997276431050332778874671087204270866459209290636957209904296387111707222119192461539")];
+
 svkm.crypto.math.decompositionOnTwoPower = function (n) {
   var wn = new Decimal(n);
   var powers = [];
@@ -83,10 +90,14 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
 };
 
 svkm.crypto.elgamal.generateKeyPair = function () {
-  var randomSeq = svkm.crypto.math.randomNum(2048);
-  while(!svkm.crypto.math.isProbablePrime(randomSeq, 30)) {
-    randomSeq.plus(Decimal.ONE);
-  }
+  var p = generatedPrimeNumbers[0];
+  var g = svkm.crypto.math.randomNum(2048);
+  var x = svkm.crypto.math.randomNum(2048);
+  var y = svkm.crypto.math.powByMod(g, x, p);
 
-  console.log(randomSeq.toString());
+  var toReturn = {};
+  toReturn['pubKey'] = [p, g, y];
+  toReturn['priKey'] = x;
+
+  return toReturn;
 };
