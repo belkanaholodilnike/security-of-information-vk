@@ -29,6 +29,14 @@ svkm.crypto.math.random = function (num) {
   return generatedString;
 };
 
+svkm.crypto.math.isCanGenerate = function (num) {
+  if(mouseCoordBuffer.length < num * (Math.floor(num / 512) + 1)) {
+    return false;
+  }
+
+  return true;
+};
+
 svkm.crypto.math.randomNum = function (num) {
   if(mouseCoordBuffer.length < num * (Math.floor(num / 512) + 1)) {
     return null;

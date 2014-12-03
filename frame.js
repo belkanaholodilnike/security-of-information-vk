@@ -15,7 +15,13 @@ function onSendButtonClick() {
     svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число составное");
   }
 
-  setTextToIframe(svkm.crypto.elgamal.generateKeyPair());
+  var key = svkm.crypto.elgamal.generateKeyPair();
+  if(key == null) {
+    svkm.ui.showInfoMessage("Недостаточно данных для генерации ключа", 3000);
+    svkm.ui.showInfoMessage("Подвигайте мышью по страницу", 3000);
+  }
+  svkm.ui.showInfoMessage(key['priKey'], 3000);
+
 }
 
 function getTextFromIframe() {

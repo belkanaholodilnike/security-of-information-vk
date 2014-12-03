@@ -90,9 +90,15 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
 };
 
 svkm.crypto.elgamal.generateKeyPair = function () {
+  if(!svkm.crypto.math.isCanGenerate(2048 + 2048))
+    return null;
   var p = generatedPrimeNumbers[0];
   var g = svkm.crypto.math.randomNum(2048);
+  if(g == null)
+    return null;
   var x = svkm.crypto.math.randomNum(2048);
+  if(x == null)
+    return null;
   var y = svkm.crypto.math.powByMod(g, x, p);
 
   var toReturn = {};
