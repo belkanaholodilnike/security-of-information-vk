@@ -7,6 +7,7 @@ function onSendButtonClick() {
       function(response) {
       console.log(response.farewell);
   });
+  svkm.ui.showInfoMessage("Готово!", 3000);
   var text = getTextFromIframe();
   if(svkm.crypto.math.isProbablePrime(new Decimal(text))) {
     svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число вероятно простое");

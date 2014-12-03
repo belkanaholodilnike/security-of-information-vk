@@ -28,9 +28,12 @@ chrome.runtime.onMessage.addListener(
               }
             });
         } else if (request.eventName == 'getMyKey') {
-          sendResponse({result: 'yes', key: svkm.keystorage.getMyKey()});
+          sendResponse({key: svkm.keystorage.getMyKey()});
         } else if (request.eventName == 'insertKeyForUser') {
           svkm.keystorage.insertKeyForUser(request.userId, request.key);
+          sendResponse({});
+        } else if (request.eventName == 'insertMyKey') {
+          svkm.keystorage.insertMyKey(request.key);
           sendResponse({});
         }
     });

@@ -13,10 +13,8 @@ svkm.basic.executeWithUserKey = function (func) {
 
 svkm.basic.executeWithMyKey = function (func) {
   chrome.runtime.sendMessage({eventName: "getMyKey"},
-    function(response) {
-      if (response.result == "yes") {
-        return func(response.key);
-      }
+    function (response) {
+      func(response.key);
     });
 }
 
@@ -113,6 +111,9 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
     var msg = text.substr(MESSAGE_TAG_ENCRYPTED.length);
     svkm.basic.executeWithMyKey(function (myPrivateKey) {
       // TODO: decrypt message
+      if (!myPrivateKey) {
+        return;
+      }
       msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
     });
   } else if (text.lastIndexOf(MESSAGE_TAG_KEY_RESPONSE, 0) === 0) {
@@ -144,8 +145,16 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
       if (confirm('Собеседник запросил ваш открытый ключ, что позволит ему шифровать сообщения, посылаемые вам. ' +
         'Разрешить передачу ключа?')) {
         svkm.basic.executeWithMyKey(function (myKey) {
+          if (!myKey) {
+            svkm.ui.showInfoMessageWithSpinner("Подождите, идет генерация ключа...");
+            mykey = svkm.crypto.elgamal.generateKeyPair();
+            svkm.ui.showInfoMessage("Готово!", 3000);
+            chrome.runtime.sendMessage({eventName: "insertMyKey", key: mykey},
+              function (response) {
+              });
+          }
           svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKey);
-          console.log("Sent my public key to the partner");
+          svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000)
         })
       } else {
         svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REFUSE);
@@ -277,11 +286,7 @@ svkm.basic.hideSecureUi = function () {
 }
 
 svkm.basic.exchangeKeys = function () {
-  console.log("Keys exchanged");
-  chrome.runtime.sendMessage({eventName: "getMyKey"},
-    function(response) {
-      svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REQUEST + response.key);
-    });
+  svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REQUEST);
 }
 
 svkm.basic.getExchangeKeysButton = function (iframe) {
@@ -302,6 +307,28 @@ svkm.ui.enableSendingButton = function (iframe) {
 
 svkm.ui.getSecureIframe = function() {
   return document.getElementById("svkm_secure_iframe");
+}
+
+svkm.ui.showInfoMessageWithSpinner = function(msg) {
+  svkm.ui.hideInfoMessage();
+  getSecuredDocument().getElementById("info-msg").textContent = msg;
+  getSecuredDocument().getElementById("loader").style.visibility= 'visible';
+  getSecuredDocument().getElementById("svkm-info").style.visibility = 'visible';
+}
+
+svkm.ui.showInfoMessage = function(msg, timeoutMs) {
+  svkm.ui.hideInfoMessage();
+  getSecuredDocument().getElementById("info-msg").textContent = msg;
+  getSecuredDocument().getElementById("svkm-info").style.visibility = 'visible';
+  setTimeout(function() {
+    svkm.ui.hideInfoMessage();
+  }, timeoutMs);
+}
+
+svkm.ui.hideInfoMessage = function() {
+  getSecuredDocument().getElementById("info-msg").textContent = '';
+  getSecuredDocument().getElementById("loader").style.visibility= 'hidden';
+  getSecuredDocument().getElementById("svkm-info").style.visibility = 'hidden';
 }
 
 /**

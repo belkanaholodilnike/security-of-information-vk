@@ -33,8 +33,25 @@ svkm.keystorage.insertKeyForUser = function (userId, key) {
   svkm.keystorage.saveKeystorage(keys);
 }
 
+svkm.keystorage.insertMyKey = function (key) {
+  var keys = svkm.keystorage.getKeystorage();
+  keys['myKey'] = key;
+  svkm.keystorage.saveKeystorage(keys);
+}
+
+svkm.keystorage.hasMyKey = function() {
+  var keys = svkm.keystorage.getKeystorage();
+  if (!keys['myKey']) {
+    return false;
+  }
+  return true;
+}
+
 svkm.keystorage.getMyKey = function() {
-  // TODO
   console.log('KEYSTORAGE: ' + localStorage[KEYSTORAGE_KEY]);
-  return 'passphrase';
+  var keys = svkm.keystorage.getKeystorage();
+  if (!keys['myKey']) {
+    return null;
+  }
+  return keys['myKey'];
 }
