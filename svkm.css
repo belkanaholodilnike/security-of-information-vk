@@ -90,3 +90,11 @@ button.button_blue:disabled {
 div.button_blue {
     display: inline-block;
 }
+
+div.svkm-info-msg-item {
+    margin-bottom: 4px;
+}
+
+#svkm-info {
+    margin: 4px;
+}

@@ -11,6 +11,8 @@ generatedPrimeNumbers = [new Decimal("646340121426220146014297533773399039208882
   new Decimal('134078079299425970995740249982058461274793658205923933777235614437217640300735469768018742981669034276' +
   '90031858186486050853753882811946569946433649006084171')];
 
+svkm.crypto.KEYSIZE = 64;
+
 svkm.crypto.math.decompositionOnTwoPower = function (n) {
   var wn = new Decimal(n);
   var powers = [];
@@ -91,14 +93,18 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
   return true;
 };
 
+svkm.crypto.elgamal.isReadyToGenerateKeyPair = function() {
+  return svkm.crypto.math.isCanGenerate(2 * svkm.crypto.KEYSIZE);
+}
+
 svkm.crypto.elgamal.generateKeyPair = function () {
-  if(!svkm.crypto.math.isCanGenerate(512 + 512))
+  if(!svkm.crypto.elgamal.isReadyToGenerateKeyPair()[0])
     return null;
   var p = generatedPrimeNumbers[1];
-  var g = svkm.crypto.math.randomNum(512);
+  var g = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(g == null)
     return null;
-  var x = svkm.crypto.math.randomNum(512);
+  var x = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(x == null)
     return null;
   var y = svkm.crypto.math.powByMod(g, x, p);

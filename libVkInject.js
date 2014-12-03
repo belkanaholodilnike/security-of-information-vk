@@ -99,6 +99,22 @@ svkm.basic.getMessageId = function (msgElement) {
   return id;
 };
 
+svkm.basic.doWhenCanGenerateKey = function(callback) {
+  var t = svkm.crypto.elgamal.isReadyToGenerateKeyPair();
+  if (!t[0]) {
+    var removeMsgCallback = svkm.ui.showInfoMessageWithSpinner("Не хватает случайных данных для генерации ключа, " +
+      "продолжайте двигать курсором (" + Math.round(t[1]) + "%)");
+    console.log("Ready to generate key? NO");
+    setTimeout(function() {
+      removeMsgCallback();
+      svkm.basic.doWhenCanGenerateKey(callback);
+    }, 500);
+  } else {
+    console.log("Ready to generate key? YES!");
+    callback();
+  }
+}
+
 svkm.basic.processMsg = function (msgElement, newMsg) {
   var text = msgElement.textContent;
 
@@ -109,9 +125,9 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
   // On encrypted message
   if (text.lastIndexOf(MESSAGE_TAG_ENCRYPTED, 0) === 0) {
     var msg = text.substr(MESSAGE_TAG_ENCRYPTED.length);
-    svkm.basic.executeWithMyKey(function (myPrivateKey) {
+    svkm.basic.executeWithMyKey(function (myKey) {
       // TODO: decrypt message
-      if (!myPrivateKey) {
+      if (!myKey) {
         return;
       }
       msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
@@ -121,13 +137,14 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
 
     hideMessageElement(msgElement);
     if (newMsg) {
-      var key = text.substr(MESSAGE_TAG_KEY_RESPONSE.length);
+      var keyString = text.substr(MESSAGE_TAG_KEY_RESPONSE.length);
+      var key = JSON.parse(keyString);
       var userId = svkm.basic.getParameterByName("sel");
       chrome.runtime.sendMessage({eventName: "insertKeyForUser", userId: userId, key: key},
         function (response) {
           svkm.ui.enableSendingButton(svkm.ui.getSecureIframe());
         });
-      console.log("Received key " + key + " for user " + userId);
+      console.log("Received key " + JSON.stringify(key) + " for user " + userId);
     }
   } else if (text.lastIndexOf(MESSAGE_TAG_KEY_REFUSE, 0) === 0) {
     // On key refusal
@@ -144,18 +161,22 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
     if (newMsg) {
       if (confirm('Собеседник запросил ваш открытый ключ, что позволит ему шифровать сообщения, посылаемые вам. ' +
         'Разрешить передачу ключа?')) {
-        svkm.basic.executeWithMyKey(function (myKey) {
-          if (!myKey) {
-            svkm.ui.showInfoMessageWithSpinner("Подождите, идет генерация ключа...");
-            mykey = svkm.crypto.elgamal.generateKeyPair();
-            svkm.ui.showInfoMessage("Готово!", 3000);
-            chrome.runtime.sendMessage({eventName: "insertMyKey", key: mykey},
-              function (response) {
-              });
-          }
-          svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKey);
-          svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000)
-        })
+          svkm.basic.doWhenCanGenerateKey(function() {
+            var removeMsgCallback = svkm.ui.showInfoMessageWithSpinner("Подождите, идет генерация ключа...");
+            svkm.basic.executeWithMyKey(function (myKey) {
+              if (!myKey) {
+                myKey = svkm.crypto.elgamal.generateKeyPair();
+                removeMsgCallback();
+                svkm.ui.showInfoMessage("Готово!", 3000);
+                chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey['pubKey']},
+                  function (response) {
+                  });
+              }
+              var myKeyString = JSON.stringify(myKey);
+              svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKeyString);
+              svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000)
+            });
+         });
       } else {
         svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REFUSE);
       }
@@ -310,25 +331,39 @@ svkm.ui.getSecureIframe = function() {
 }
 
 svkm.ui.showInfoMessageWithSpinner = function(msg) {
-  svkm.ui.hideInfoMessage();
-  getSecuredDocument().getElementById("info-msg").textContent = msg;
-  getSecuredDocument().getElementById("loader").style.visibility= 'visible';
-  getSecuredDocument().getElementById("svkm-info").style.visibility = 'visible';
+  var document = getSecuredDocument();
+  var msgDiv = document.createElement('div');
+  msgDiv.className = 'svkm-info-msg-item';
+
+  var imgElement = document.createElement('img');
+  imgElement.setAttribute('src', 'images/ajax-loader.gif');
+  msgDiv.appendChild(imgElement);
+
+  var msgSpan = document.createElement('span');
+  msgSpan.textContent = msg;
+  msgDiv.appendChild(msgSpan);
+
+  getSecuredDocument().getElementById("svkm-info").appendChild(msgDiv);
+
+  return function() {
+    msgDiv.parentNode.removeChild(msgDiv);
+  };
 }
 
 svkm.ui.showInfoMessage = function(msg, timeoutMs) {
-  svkm.ui.hideInfoMessage();
-  getSecuredDocument().getElementById("info-msg").textContent = msg;
-  getSecuredDocument().getElementById("svkm-info").style.visibility = 'visible';
-  setTimeout(function() {
-    svkm.ui.hideInfoMessage();
-  }, timeoutMs);
-}
+  var document = getSecuredDocument();
+  var msgDiv = document.createElement('div');
+  msgDiv.className = 'svkm-info-msg-item';
 
-svkm.ui.hideInfoMessage = function() {
-  getSecuredDocument().getElementById("info-msg").textContent = '';
-  getSecuredDocument().getElementById("loader").style.visibility= 'hidden';
-  getSecuredDocument().getElementById("svkm-info").style.visibility = 'hidden';
+  var msgSpan = document.createElement('span');
+  msgSpan.textContent = msg;
+  msgDiv.appendChild(msgSpan);
+
+  getSecuredDocument().getElementById("svkm-info").appendChild(msgDiv);
+
+  setTimeout(function() {
+    msgDiv.parentNode.removeChild(msgDiv);
+  }, timeoutMs);
 }
 
 /**
