@@ -134,6 +134,8 @@ svkm.crypto.elgamal.encrypt = function (text, pubKey, myKey) {
   if(aesKey == null)
     return null;
 
+  console.log("encrypt: aesKey = " + aesKey.toString());
+
   var elGamalSessionKey = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(elGamalSessionKey == null)
     return null;
@@ -160,6 +162,8 @@ svkm.crypto.elgamal.decrypt = function (a, b, text, myKey) {
   }
   var aesKey = svkm.crypto.math.powByMod(a, myKey['pubKey'][0].minus(1).minus(myKey['priKey']), myKey['pubKey'][0])
       .times(b.modulo(myKey['pubKey'][0]));
+
+  console.log("decrypt: aesKey = " + aesKey.toString());
 
   return CryptoJS.AES.decrypt(text, aesKey.toString());
 };
