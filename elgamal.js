@@ -148,7 +148,7 @@ svkm.crypto.elgamal.encrypt = function (text, pubKey, myKey) {
   var aesEncrypted = CryptoJS.AES.encrypt(text, aesKey.toString());
 
   return a.toString() + ";" + b.toString() + ";" +
-      ";" + aMy.toString() + ";" + bMy.toString() + ";" + aesEncrypted;
+      aMy.toString() + ";" + bMy.toString() + ";" + aesEncrypted;
 };
 
 svkm.crypto.elgamal.decrypt = function (a, b, text, myKey) {
