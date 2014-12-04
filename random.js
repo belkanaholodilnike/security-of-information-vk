@@ -65,7 +65,7 @@ svkm.crypto.math.randomNum = function (bitsNeeded) {
     generatedString += hashString;
   }
 
-  generatedString = hashString.substr(0, bitsNeeded / 4);
+  generatedString = hashString.substr(0, (bitsNeeded / 4) + 1);
   return new Decimal(generatedString, 16);
 };
 
