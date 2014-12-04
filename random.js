@@ -40,7 +40,7 @@ function mouseMoved(docElement) {
 
 svkm.crypto.math.random_test = function() {
   for (i = 6; i < 48; i += 6) {
-    console.log("random(" + i + ") = " + svkm.crypto.math.randomNum(i).toFormat());
+    console.log("random(" + i + ") = " + svkm.crypto.math.randomNum(i).toString());
   }
 }
 
@@ -59,16 +59,13 @@ svkm.crypto.math.randomNum = function (bitsNeeded) {
 
   // SHA-3 generate 512 bit num, we need to repeat hashing for generate several sequences
   var generatedString = "";
-  while (bitsNeeded > 0) {
-    var curBitsAdded = Math.min(512, bitsNeeded);
-    curBitsAdded += (4 - (curBitsAdded % 4));
-    var curCharsAdded = curBitsAdded / 4;
-    var hashString = CryptoJS.SHA3(mouseCoordBuffer.splice(0, curBitsAdded).toString())
+  for (var i = 0; i <= Math.floor(bitsNeeded / 512); ++i) {
+    var hashString = CryptoJS.SHA3(mouseCoordBuffer.splice(0, 7).toString())
       .toString(CryptoJS.enc.Hex);
-    generatedString += hashString.substr(0, curCharsAdded);
-    bitsNeeded -= curBitsAdded;
+    generatedString += hashString;
   }
 
+  generatedString = hashString.substr(0, bitsNeeded / 4);
   return new Decimal(generatedString, 16);
 };
 
