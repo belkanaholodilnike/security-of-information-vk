@@ -9,19 +9,11 @@ function onSendButtonClick() {
   });
   svkm.ui.showInfoMessage("Готово!", 3000);
   var text = getTextFromIframe();
-  if(svkm.crypto.math.isProbablePrime(new Decimal(text))) {
-    svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число вероятно простое");
-  } else {
-    svkm.basic.sendMessage("Проверка на прсототу числа " + text + '\n' + "Число составное");
-  }
 
-  var key = svkm.crypto.elgamal.generateKeyPair();
-  if(key == null) {
-    svkm.ui.showInfoMessage("Недостаточно данных для генерации ключа", 3000);
-    svkm.ui.showInfoMessage("Подвигайте мышью по страницу", 3000);
-  }
-  svkm.ui.showInfoMessage(key['priKey'], 3000);
+  // TODO: change to sendMessage()
+  //svkm.basic.sendMessageUnencrypted(text);
 
+  svkm.basic.sendMessage(text);
 }
 
 function getTextFromIframe() {

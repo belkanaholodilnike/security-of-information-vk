@@ -8,8 +8,10 @@ generatedPrimeNumbers = [new Decimal("646340121426220146014297533773399039208882
   "043828666779336684841369949573129138989712352070652644116155611318662052385416920628300517185728354233451887207436" +
   "923714715196702304603291808807395226466574462454251369421640419450314203453862646939357085161313395870091994536705" +
   "997276431050332778874671087204270866459209290636957209904296387111707222119192461539"),
-  new Decimal("134078079299425970995740249982058461274793658205923933777235614437217640300735469768018742981669034276" +
-  "90031858186486050853753882811946569946433649006084171")];
+  new Decimal("268156158598851941991480499964116922549587316411847867554471228874435280601470939536037485963338068553" +
+  "80063716372972101707507765623893139892867298012168351")];
+
+svkm.crypto.KEYSIZE = 64;
 
 svkm.crypto.math.decompositionOnTwoPower = function (n) {
   var wn = new Decimal(n);
@@ -91,14 +93,18 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
   return true;
 };
 
+svkm.crypto.elgamal.isReadyToGenerateKeyPair = function() {
+  return svkm.crypto.math.isCanGenerate(2 * svkm.crypto.KEYSIZE);
+};
+
 svkm.crypto.elgamal.generateKeyPair = function () {
-  if(!svkm.crypto.math.isCanGenerate(511 + 511))
+  if(!svkm.crypto.elgamal.isReadyToGenerateKeyPair()[0])
     return null;
   var p = generatedPrimeNumbers[1];
-  var g = svkm.crypto.math.randomNum(511);
+  var g = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(g == null)
     return null;
-  var x = svkm.crypto.math.randomNum(511);
+  var x = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(x == null)
     return null;
   var y = svkm.crypto.math.powByMod(g, x, p);
@@ -111,13 +117,13 @@ svkm.crypto.elgamal.generateKeyPair = function () {
 };
 
 svkm.crypto.elgamal.encrypt = function (pubKey, text) {
-  if(!svkm.crypto.math.isCanGenerate(511 + 511))
+  if(!svkm.crypto.math.isCanGenerate(2 * svkm.crypto.KEYSIZE))
     return null;
-  var aesKey = svkm.crypto.math.randomNum(511);
+  var aesKey = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(aesKey == null)
     return null;
 
-  var elGamalSessionKey = svkm.crypto.math.randomNum(511);
+  var elGamalSessionKey = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(elGamalSessionKey == null)
     return null;
 
