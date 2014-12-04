@@ -8,8 +8,8 @@ generatedPrimeNumbers = [new Decimal("646340121426220146014297533773399039208882
   "043828666779336684841369949573129138989712352070652644116155611318662052385416920628300517185728354233451887207436" +
   "923714715196702304603291808807395226466574462454251369421640419450314203453862646939357085161313395870091994536705" +
   "997276431050332778874671087204270866459209290636957209904296387111707222119192461539"),
-  new Decimal('134078079299425970995740249982058461274793658205923933777235614437217640300735469768018742981669034276' +
-  '90031858186486050853753882811946569946433649006084171')];
+  new Decimal("134078079299425970995740249982058461274793658205923933777235614437217640300735469768018742981669034276" +
+  "90031858186486050853753882811946569946433649006084171")];
 
 svkm.crypto.math.decompositionOnTwoPower = function (n) {
   var wn = new Decimal(n);
@@ -92,13 +92,13 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
 };
 
 svkm.crypto.elgamal.generateKeyPair = function () {
-  if(!svkm.crypto.math.isCanGenerate(512 + 512))
+  if(!svkm.crypto.math.isCanGenerate(511 + 511))
     return null;
   var p = generatedPrimeNumbers[1];
-  var g = svkm.crypto.math.randomNum(512);
+  var g = svkm.crypto.math.randomNum(511);
   if(g == null)
     return null;
-  var x = svkm.crypto.math.randomNum(512);
+  var x = svkm.crypto.math.randomNum(511);
   if(x == null)
     return null;
   var y = svkm.crypto.math.powByMod(g, x, p);
@@ -108,4 +108,34 @@ svkm.crypto.elgamal.generateKeyPair = function () {
   toReturn['priKey'] = x;
 
   return toReturn;
+};
+
+svkm.crypto.elgamal.encrypt = function (pubKey, text) {
+  if(!svkm.crypto.math.isCanGenerate(511 + 511))
+    return null;
+  var aesKey = svkm.crypto.math.randomNum(511);
+  if(aesKey == null)
+    return null;
+
+  var elGamalSessionKey = svkm.crypto.math.randomNum(511);
+  if(elGamalSessionKey == null)
+    return null;
+
+  var a = svkm.crypto.math.powByMod(pubKey[1], elGamalSessionKey, pubKey[0]);
+  var b = svkm.crypto.math.powByMod(pubKey[2], elGamalSessionKey, pubKey[0]).times(aesKey.modulo(pubKey[0]));
+
+  var myPubKey = svkm.keystorage.getMyKey();
+  if(myKey == null)
+    return null;
+
+  var aMy = svkm.crypto.math.powByMod(myKey['pubKey'][1], elGamalSessionKey, myKey['pubKey'][0]);
+  var bMy = svkm.crypto.math.powByMod(myKey['pubKey'][2], elGamalSessionKey, myKey['pubKey'][0])
+      .times(aesKey.modulo(myKey['pubKey'][0]));
+
+  var aesEncrypted = CryptoJS.AES.encrypt(text, aesKey);
+
+  var encryptedFullText = "(" + a.toString() + ", " + b.toString() + "), " +
+      "(" + aMy.toString() + ", " + bMy.toString() + ") " + aesEncrypted;
+
+  return encryptedFullText
 };

@@ -23,7 +23,7 @@ svkm.crypto.math.random = function (num) {
   var generatedString = "";
   for(var i = 0; i < Math.floor(num / 512) + 1; i++) {
     generatedString += CryptoJS.SHA3(mouseCoordBuffer.splice(0, num).toString())
-        .toString(CryptoJS.enc.Hex);
+        .toString(CryptoJS.enc.Base64);
   }
 
   return generatedString;
