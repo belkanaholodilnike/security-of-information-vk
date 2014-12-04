@@ -1,11 +1,15 @@
 var mouseCoordBuffer = [];
 
+var LIMIT_BUFFER_LENGTH = 1000000;
+
 /**
  * Listener which should be called when mouse coordinates is changed.
  */
 function mouseMoved(docElement) {
-  mouseCoordBuffer.push(docElement.pageX);
-  mouseCoordBuffer.push(docElement.pageY);
+  if (mouseCoordBuffer.length < LIMIT_BUFFER_LENGTH) {
+    mouseCoordBuffer.push(docElement.pageX);
+    mouseCoordBuffer.push(docElement.pageY);
+  }
 }
 
 /**
@@ -20,10 +24,10 @@ svkm.crypto.math.random = function (num) {
   }
 
   // SHA-3 generate 512 bit num, we need to repeat hashing for generate several sequences
-  var generatedString = "";
+  var generatedString = "123";
   for(var i = 0; i < Math.floor(num / 512) + 1; i++) {
-    generatedString += CryptoJS.SHA3(mouseCoordBuffer.splice(0, num).toString())
-        .toString(CryptoJS.enc.Base64);
+    //generatedString += CryptoJS.SHA3(mouseCoordBuffer.splice(0, num).toString())
+      //  .toString(CryptoJS.enc.Base64);
   }
 
   return generatedString;
@@ -43,10 +47,10 @@ svkm.crypto.math.randomNum = function (num) {
   }
 
   // SHA-3 generate 512 bit num, we need to repeat hashing for generate several sequences
-  var generatedString = "";
+  var generatedString = "123";
   for(var i = 0; i < Math.floor(num / 512) + 1; i++) {
-    generatedString += CryptoJS.SHA3(mouseCoordBuffer.splice(0, num).toString())
-        .toString(CryptoJS.enc.Hex);
+//    generatedString += CryptoJS.SHA3(mouseCoordBuffer.splice(0, num).toString())
+//        .toString(CryptoJS.enc.Hex);
   }
 
   return new Decimal(generatedString, 16);

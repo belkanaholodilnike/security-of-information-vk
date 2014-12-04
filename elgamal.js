@@ -97,6 +97,10 @@ svkm.crypto.elgamal.isReadyToGenerateKeyPair = function() {
   return svkm.crypto.math.isCanGenerate(2 * svkm.crypto.KEYSIZE);
 };
 
+svkm.crypto.elgamal.isReadyToEncryptMessage = function() {
+  return svkm.crypto.math.isCanGenerate(2 * svkm.crypto.KEYSIZE);
+};
+
 svkm.crypto.elgamal.generateKeyPair = function () {
   if(!svkm.crypto.elgamal.isReadyToGenerateKeyPair()[0])
     return null;
@@ -116,8 +120,13 @@ svkm.crypto.elgamal.generateKeyPair = function () {
   return toReturn;
 };
 
-svkm.crypto.elgamal.encrypt = function (pubKey, text) {
-  if(!svkm.crypto.math.isCanGenerate(2 * svkm.crypto.KEYSIZE))
+svkm.crypto.elgamal.encrypt = function (text, pubKey, myKey) {
+  if(myKey == null)
+    return null;
+  if(pubKey == null)
+    return null;
+
+  if(!svkm.crypto.math.isCanGenerate(2 * svkm.crypto.KEYSIZE)[0])
     return null;
   var aesKey = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(aesKey == null)
@@ -129,10 +138,6 @@ svkm.crypto.elgamal.encrypt = function (pubKey, text) {
 
   var a = svkm.crypto.math.powByMod(pubKey[1], elGamalSessionKey, pubKey[0]);
   var b = svkm.crypto.math.powByMod(pubKey[2], elGamalSessionKey, pubKey[0]).times(aesKey.modulo(pubKey[0]));
-
-  var myPubKey = svkm.keystorage.getMyKey();
-  if(myKey == null)
-    return null;
 
   var aMy = svkm.crypto.math.powByMod(myKey['pubKey'][1], elGamalSessionKey, myKey['pubKey'][0]);
   var bMy = svkm.crypto.math.powByMod(myKey['pubKey'][2], elGamalSessionKey, myKey['pubKey'][0])

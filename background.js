@@ -18,7 +18,9 @@ chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.eventName == 'messageSent') {
             messageLog.push(request.message);
-        } else if (request.eventName == 'getKeyForUser') {
+        } else if (request.eventName == 'getPublicKeyForUser') {
+          // Returns public key in the format:
+          // TODO
           svkm.keystorage.withKeyForUser(request.id,
             function(userKey) {
               if (userKey != null) {

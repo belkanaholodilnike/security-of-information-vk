@@ -9,10 +9,6 @@ function onSendButtonClick() {
   });
   svkm.ui.showInfoMessage("Готово!", 3000);
   var text = getTextFromIframe();
-
-  // TODO: change to sendMessage()
-  //svkm.basic.sendMessageUnencrypted(text);
-
   svkm.basic.sendMessage(text);
 }
 

@@ -4,8 +4,10 @@
 
 var im_editable = null;
 
-svkm.basic.executeWithUserKey = function (func) {
-  chrome.runtime.sendMessage({eventName: "getMyKey", id:svkm.basic.getParameterByName("sel")},
+svkm.basic.executeWithUserPublicKey = function (func) {
+  chrome.runtime.sendMessage({
+      eventName: "getPublicKeyForUser",
+      id:svkm.basic.getParameterByName("sel")},
     function(response) {
       return func(response.key);
     });
@@ -115,6 +117,22 @@ svkm.basic.doWhenCanGenerateKey = function(callback) {
   }
 }
 
+svkm.basic.doWhenCanEncryptMessage = function(callback) {
+  var t = svkm.crypto.elgamal.isReadyToEncryptMessage();
+  if (!t[0]) {
+    var removeMsgCallback = svkm.ui.showInfoMessageWithSpinner("Не хватает случайных данных для шифрования сообщения, " +
+      "продолжайте двигать курсором (" + Math.round(t[1]) + "%)");
+    console.log("Ready to encrypt message? NO");
+    setTimeout(function() {
+      removeMsgCallback();
+      svkm.basic.doWhenCanEncryptMessage(callback);
+    }, 500);
+  } else {
+    console.log("Ready to encrypt message? YES!");
+    callback();
+  }
+}
+
 svkm.basic.processMsg = function (msgElement, newMsg) {
   var text = msgElement.textContent;
 
@@ -126,10 +144,12 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
   if (text.lastIndexOf(MESSAGE_TAG_ENCRYPTED, 0) === 0) {
     var msg = text.substr(MESSAGE_TAG_ENCRYPTED.length);
     svkm.basic.executeWithMyKey(function (myKey) {
-      // TODO: decrypt message
       if (!myKey) {
+        console.log("Couldn't decrypt message, since my private key is not yet generated");
         return;
       }
+      var myPrivKey = myKey[priKey];
+      // TODO: add decryption
       msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
     });
   } else if (text.lastIndexOf(MESSAGE_TAG_KEY_RESPONSE, 0) === 0) {
@@ -168,11 +188,11 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
                 myKey = svkm.crypto.elgamal.generateKeyPair();
                 removeMsgCallback();
                 svkm.ui.showInfoMessage("Готово!", 3000);
-                chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey['pubKey']},
+                chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey},
                   function (response) {
                   });
               }
-              var myKeyString = JSON.stringify(myKey);
+              var myKeyString = JSON.stringify(myKey['pubKey']);
               svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKeyString);
               svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000)
             });
@@ -219,11 +239,6 @@ svkm.basic.urlChanged = function () {
   }
 }
 
-svkm.crypto.encrypt = function (msg, key) {
-  // TODO: encrypt message
-  return MESSAGE_TAG_ENCRYPTED + CryptoJS.AES.encrypt(msg, key).toString();
-}
-
 svkm.basic.sendMessage = function (text) {
     console.log('sendMessage: text = ' + text);
     var imEditable = document.getElementById(svkm.basic.getImEditableId());
@@ -231,9 +246,14 @@ svkm.basic.sendMessage = function (text) {
         return false;
     }
 
-    svkm.basic.executeWithUserKey(function(key) {
-      imEditable.textContent = svkm.crypto.elgamal.encrypt(text, key);
-      document.getElementById("im_send").dispatchEvent(new Event("click"));
+    svkm.basic.doWhenCanEncryptMessage(function () {
+      svkm.basic.executeWithUserPublicKey(function(publicKey) {
+        svkm.basic.executeWithMyKey(function (myKey) {
+          var encryptedText = svkm.crypto.elgamal.encrypt(text, publicKey, myKey);
+          imEditable.textContent = encryptedText;
+          document.getElementById("im_send").dispatchEvent(new Event("click"));
+        });
+      });
     });
 
     return true;
@@ -407,9 +427,9 @@ svkm.basic.replaceVkImEditable = function () {
   iframe.onload = function () {
     svkm.basic.getSendMessageButton(iframe).addEventListener("click", onSendButtonClick);
     svkm.basic.getExchangeKeysButton(iframe).addEventListener("click", svkm.basic.exchangeKeys);
-    chrome.runtime.sendMessage({eventName: "getKeyForUser", id:svkm.basic.getParameterByName("sel")},
+    chrome.runtime.sendMessage({eventName: "getPublicKeyForUser", id:svkm.basic.getParameterByName("sel")},
       function(response) {
-        console.log(response);
+        console.log("Public key for user " + svkm.basic.getParameterByName("sel") + " is " + response);
         if (response.result == "no") {
           svkm.ui.disableSendingButton(iframe);
         } else {
