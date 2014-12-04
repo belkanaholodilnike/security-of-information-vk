@@ -138,10 +138,32 @@ svkm.crypto.elgamal.encrypt = function (pubKey, text) {
   var bMy = svkm.crypto.math.powByMod(myKey['pubKey'][2], elGamalSessionKey, myKey['pubKey'][0])
       .times(aesKey.modulo(myKey['pubKey'][0]));
 
-  var aesEncrypted = CryptoJS.AES.encrypt(text, aesKey);
+  var aesEncrypted = CryptoJS.AES.encrypt(text, aesKey.toString());
 
-  var encryptedFullText = "(" + a.toString() + ", " + b.toString() + "), " +
-      "(" + aMy.toString() + ", " + bMy.toString() + ") " + aesEncrypted;
+  return a.toString() + ";" + b.toString() + ";" +
+      ";" + aMy.toString() + ";" + bMy.toString() + ";" + aesEncrypted;
+};
 
-  return encryptedFullText
+svkm.crypto.elgamal.decrypt = function (a, b, text) {
+  var key = svkm.keystorage.getMyKey();
+  var aesKey = svkm.powByMod(a, key['pubKey'][0].minus(1).minus(key['priKey']), key['pubKey'][0])
+      .times(b.modulo(key['pubKey'][0]));
+
+  CryptoJS.AES.decrypt(text, aesKey.toString());
+};
+
+svkm.crypto.elgamal.decryptReceived = function (priKey, text) {
+  var textParts = text.split(";");
+  var a = textParts[0];
+  var b = textParts[1];
+
+  return svkm.crypto.elgamal.decrypt(a, b, textParts[4]);
+};
+
+svkm.crypto.elgamal.decryptSended = function (text) {
+  var textParts = text.split(";");
+  var a = textParts[2];
+  var b = textParts[3];
+
+  return svkm.crypto.elgamal.decrypt(a, b, textParts[4]);
 };
