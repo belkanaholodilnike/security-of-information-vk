@@ -154,7 +154,7 @@ svkm.crypto.elgamal.decrypt = function (a, b, text) {
   var aesKey = svkm.powByMod(a, key['pubKey'][0].minus(1).minus(key['priKey']), key['pubKey'][0])
       .times(b.modulo(key['pubKey'][0]));
 
-  CryptoJS.AES.decrypt(text, aesKey.toString());
+  return CryptoJS.AES.decrypt(text, aesKey.toString());
 };
 
 svkm.crypto.elgamal.decryptReceived = function (priKey, text) {
