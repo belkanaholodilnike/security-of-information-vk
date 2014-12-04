@@ -30,7 +30,8 @@ chrome.runtime.onMessage.addListener(
               }
             });
         } else if (request.eventName == 'getMyKey') {
-          sendResponse({key: svkm.keystorage.getMyKey()});
+          var myKey = svkm.keystorage.getMyKey();
+          sendResponse({key: myKey});
         } else if (request.eventName == 'insertKeyForUser') {
           svkm.keystorage.insertKeyForUser(request.userId, request.key);
           sendResponse({});
