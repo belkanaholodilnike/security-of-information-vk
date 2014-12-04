@@ -11,7 +11,7 @@ generatedPrimeNumbers = [new Decimal("646340121426220146014297533773399039208882
   new Decimal("268156158598851941991480499964116922549587316411847867554471228874435280601470939536037485963338068553" +
   "80063716372972101707507765623893139892867298012168351")];
 
-svkm.crypto.KEYSIZE = 64;
+svkm.crypto.KEYSIZE = 8;
 
 svkm.crypto.math.decompositionOnTwoPower = function (n) {
   var wn = new Decimal(n);
@@ -32,6 +32,8 @@ svkm.crypto.math.decompositionOnTwoPower = function (n) {
 
 svkm.crypto.math.powByMod = function (x, y, t) {
   var powers = svkm.crypto.math.decompositionOnTwoPower(y);
+  console.log("powByMod(" + x + "," + y + "," + t + ")");
+  console.log("len of powers[]: " + powers.length);
 
   var result = new Decimal(1);
   for(var key in powers) {
@@ -149,26 +151,31 @@ svkm.crypto.elgamal.encrypt = function (text, pubKey, myKey) {
       ";" + aMy.toString() + ";" + bMy.toString() + ";" + aesEncrypted;
 };
 
-svkm.crypto.elgamal.decrypt = function (a, b, text) {
-  var key = svkm.keystorage.getMyKey();
-  var aesKey = svkm.powByMod(a, key['pubKey'][0].minus(1).minus(key['priKey']), key['pubKey'][0])
-      .times(b.modulo(key['pubKey'][0]));
+svkm.crypto.elgamal.decrypt = function (a, b, text, myKey) {
+  if (typeof(a) != Decimal) {
+    a = new Decimal(a);
+  }
+  if (typeof(b) != Decimal) {
+    b = new Decimal(b);
+  }
+  var aesKey = svkm.crypto.math.powByMod(a, myKey['pubKey'][0].minus(1).minus(myKey['priKey']), myKey['pubKey'][0])
+      .times(b.modulo(myKey['pubKey'][0]));
 
   return CryptoJS.AES.decrypt(text, aesKey.toString());
 };
 
-svkm.crypto.elgamal.decryptReceived = function (priKey, text) {
+svkm.crypto.elgamal.decryptReceived = function (text, myKey) {
   var textParts = text.split(";");
   var a = new Decimal(textParts[0]);
   var b = new Decimal(textParts[1]);
 
-  return svkm.crypto.elgamal.decrypt(a, b, textParts[4]);
+  return svkm.crypto.elgamal.decrypt(a, b, textParts[4], myKey);
 };
 
-svkm.crypto.elgamal.decryptSended = function (text) {
+svkm.crypto.elgamal.decryptSended = function (text, myKey) {
   var textParts = text.split(";");
   var a = new Decimal(textParts[2]);
   var b = new Decimal(textParts[3]);
 
-  return svkm.crypto.elgamal.decrypt(a, b, textParts[4]);
+  return svkm.crypto.elgamal.decrypt(a, b, textParts[4], myKey);
 };

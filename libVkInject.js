@@ -9,14 +9,27 @@ svkm.basic.executeWithUserPublicKey = function (func) {
       eventName: "getPublicKeyForUser",
       id:svkm.basic.getParameterByName("sel")},
     function(response) {
-      return func(response.key);
+      var key = response.key;
+      if (key) {
+        key[0] = new Decimal(key[0]);
+        key[1] = new Decimal(key[1]);
+        key[2] = new Decimal(key[2]);
+      }
+      return func(key);
     });
 }
 
 svkm.basic.executeWithMyKey = function (func) {
   chrome.runtime.sendMessage({eventName: "getMyKey"},
     function (response) {
-      func(response.key);
+      var myKey = response.key;
+      if (myKey) {
+        myKey['pubKey'][0] = new Decimal(myKey['pubKey'][0]);
+        myKey['pubKey'][1] = new Decimal(myKey['pubKey'][1]);
+        myKey['pubKey'][2] = new Decimal(myKey['pubKey'][2]);
+        myKey['priKey'] = new Decimal(myKey['priKey']);
+      }
+      func(myKey);
     });
 }
 
@@ -148,9 +161,10 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
         console.log("Couldn't decrypt message, since my private key is not yet generated");
         return;
       }
-      var myPrivKey = myKey[priKey];
       // TODO: add decryption
-      msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
+      var decryptedText = svkm.crypto.elgamal.decryptReceived(msg, myKey);
+      msgElement.textContent = decryptedText;
+      //msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
     });
   } else if (text.lastIndexOf(MESSAGE_TAG_KEY_RESPONSE, 0) === 0) {
     // On key response
@@ -250,7 +264,7 @@ svkm.basic.sendMessage = function (text) {
       svkm.basic.executeWithUserPublicKey(function(publicKey) {
         svkm.basic.executeWithMyKey(function (myKey) {
           var encryptedText = svkm.crypto.elgamal.encrypt(text, publicKey, myKey);
-          imEditable.textContent = encryptedText;
+          imEditable.textContent = MESSAGE_TAG_ENCRYPTED + encryptedText;
           document.getElementById("im_send").dispatchEvent(new Event("click"));
         });
       });
@@ -334,6 +348,10 @@ svkm.basic.getExchangeKeysButton = function (iframe) {
   return iframe.contentWindow.document.getElementById("svkm_exchange_keys_button");
 }
 
+svkm.basic.getTestButton = function(iframe) {
+  return iframe.contentWindow.document.getElementById("svkm_test_button");
+}
+
 svkm.basic.getSendMessageButton = function(iframe) {
   return iframe.contentWindow.document.getElementById("svkm_send_button");
 }
@@ -386,6 +404,10 @@ svkm.ui.showInfoMessage = function(msg, timeoutMs) {
   }, timeoutMs);
 }
 
+test = function() {
+  svkm.crypto.math.random_test();
+}
+
 /**
  * Function replaces vk message editable with secure input field inside an iframe
  */
@@ -426,6 +448,7 @@ svkm.basic.replaceVkImEditable = function () {
   iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
   iframe.onload = function () {
     svkm.basic.getSendMessageButton(iframe).addEventListener("click", onSendButtonClick);
+    svkm.basic.getTestButton(iframe).addEventListener("click", test);
     svkm.basic.getExchangeKeysButton(iframe).addEventListener("click", svkm.basic.exchangeKeys);
     chrome.runtime.sendMessage({eventName: "getPublicKeyForUser", id:svkm.basic.getParameterByName("sel")},
       function(response) {
