@@ -159,16 +159,16 @@ svkm.crypto.elgamal.decrypt = function (a, b, text) {
 
 svkm.crypto.elgamal.decryptReceived = function (priKey, text) {
   var textParts = text.split(";");
-  var a = textParts[0];
-  var b = textParts[1];
+  var a = new Decimal(textParts[0]);
+  var b = new Decimal(textParts[1]);
 
   return svkm.crypto.elgamal.decrypt(a, b, textParts[4]);
 };
 
 svkm.crypto.elgamal.decryptSended = function (text) {
   var textParts = text.split(";");
-  var a = textParts[2];
-  var b = textParts[3];
+  var a = new Decimal(textParts[2]);
+  var b = new Decimal(textParts[3]);
 
   return svkm.crypto.elgamal.decrypt(a, b, textParts[4]);
 };
