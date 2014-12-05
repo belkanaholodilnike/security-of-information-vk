@@ -42,7 +42,7 @@ svkm.crypto.math.random_test = function() {
   for (i = 6; i < 48; i += 6) {
     console.log("random(" + i + ") = " + svkm.crypto.math.randomNum(i).toString());
   }
-}
+};
 
 svkm.crypto.math.isCanGenerate = function (num) {
   if(mouseCoordBuffer.length < num * (Math.floor(num / 512) + 1)) {
@@ -53,7 +53,7 @@ svkm.crypto.math.isCanGenerate = function (num) {
 };
 
 svkm.crypto.math.randomNum = function (bitsNeeded) {
-  if(mouseCoordBuffer.length < bitsNeeded / 4) {
+  if(mouseCoordBuffer.length < (bitsNeeded / 4) + 1) {
     return null;
   }
 
