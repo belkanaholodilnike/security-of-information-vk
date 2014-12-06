@@ -129,7 +129,9 @@ svkm.basic.doWhenCanGenerateKey = function(callback) {
     }, 500);
   } else {
     console.log("Ready to generate key? YES!");
-    callback();
+    if (callback) {
+      callback();
+    }
   }
 }
 
