@@ -53,20 +53,32 @@ svkm.crypto.math.isCanGenerate = function (num) {
 };
 
 svkm.crypto.math.randomNum = function (bitsNeeded) {
-  if(mouseCoordBuffer.length < (bitsNeeded / 4) + 1) {
-    return null;
+  var res = new Decimal(0);
+  var j = 0;
+  while (res.equals(0)) {
+    var nIters = Math.floor(bitsNeeded / 512);
+
+    if(mouseCoordBuffer.length < 7 * (nIters + 1 + j)) {
+      return null;
+    }
+
+    // SHA-3 generate 512 bit num, we need to repeat hashing for generate several sequences
+    var generatedString = "";
+    for (var i = 0; i <= nIters; ++i) {
+      var hashString = CryptoJS.SHA3(mouseCoordBuffer.slice(0, 7 + j).toString())
+          .toString(CryptoJS.enc.Hex);
+      generatedString += hashString;
+    }
+
+    generatedString = hashString.substr(0, (bitsNeeded / 4) + 1);
+    var g = new Decimal(generatedString, 16);
+    res = g.modulo(new Decimal(2).pow(bitsNeeded));
+    j++;
   }
 
-  // SHA-3 generate 512 bit num, we need to repeat hashing for generate several sequences
-  var generatedString = "";
-  for (var i = 0; i <= Math.floor(bitsNeeded / 512); ++i) {
-    var hashString = CryptoJS.SHA3(mouseCoordBuffer.splice(0, 7).toString())
-      .toString(CryptoJS.enc.Hex);
-    generatedString += hashString;
-  }
+  mouseCoordBuffer.splice(0, 7 + j);
 
-  generatedString = hashString.substr(0, (bitsNeeded / 4) + 1);
-  return new Decimal(generatedString, 16);
+  return res;
 };
 
 

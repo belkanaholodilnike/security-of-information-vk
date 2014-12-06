@@ -161,12 +161,17 @@ svkm.crypto.elgamal.decrypt = function (a, b, text, myKey) {
   if (typeof(b) != Decimal) {
     b = new Decimal(b);
   }
-  var aesKey = svkm.crypto.math.powByMod(a, myKey['pubKey'][0].minus(1).minus(myKey['priKey']), myKey['pubKey'][0])
-    .times(b.modulo(myKey['pubKey'][0]));
+
+  var p = myKey['pubKey'][0];
+  var x = myKey['priKey'];
+
+  // (a^(p-1-x) mod p) * (b mod p)
+  var aesKey = svkm.crypto.math.powByMod(a, p.minus(1).minus(x), p)
+    .times(b.modulo(p)).modulo(p);
 
   console.log("decrypt: aesKey = " + aesKey.toString());
+
   return CryptoJS.AES.decrypt(text, aesKey.toString()).toString(CryptoJS.enc.Utf8);
-  ;
 };
 
 svkm.crypto.elgamal.decryptReceived = function (text, myKey) {

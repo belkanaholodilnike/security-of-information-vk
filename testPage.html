@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head lang="ru">
+    <meta charset="UTF-8">
+    <title>Test page</title>
+    <script type="text/javascript" src="sha3.js"></script>
+    <script type="text/javascript" src="aes.js"></script>
+    <script type="text/javascript" src="decimal.js"></script>
+    <script type="text/javascript" src="common.js"></script>
+    <script type="text/javascript" src="elgamal.js"></script>
+    <script type="text/javascript" src="aes.js"></script>
+    <script type="text/javascript" src="sha3.js"></script>
+    <script type="text/javascript" src="random.js"></script>
+    <script type="text/javascript" src="elgamal.js"></script>
+    <script type="text/javascript" src="libVkInject.js"></script>
+    <script type="text/javascript" src="secureInjection.js"></script>
+    <script type="text/javascript" src="frame.js"></script>
+
+</head>
+<body>
+<script language="JavaScript">
+    function a () {
+        var out = document.getElementById('out');
+
+
+        var key = svkm.crypto.elgamal.generateKeyPair();
+        out.innerHTML += JSON.stringify(key) + "<br/>";
+        var encrypted = svkm.crypto.elgamal.encrypt("Hello", key['pubKey'], key);
+
+        out.textContent += encrypted;
+    }
+
+    function randomTest() {
+        var out = document.getElementById("out-random-success-num");
+        out.innerHTML = "";
+        out.innerHTML += "Размер буфера: " + mouseCoordBuffer.length + "<br/>";
+
+        var counter = 0;
+        var randomResult = 1;
+        while (randomResult != null && counter < 1000) {
+            randomResult = svkm.crypto.math.randomNum(64);
+            counter++;
+        }
+        out.innerHTML += "Сгенерировано: " + counter;
+    }
+
+</script>
+<label for="in"></label>
+<input id="in" type="text" />
+    <button id="b" onclick="a()">Click me!</button>
+    <button id="encrypted-text"></button>
+    <button id="c" onclick="randomTest()">Click me random!</button>
+<div id="out-random-success-num"></div>
+<div id="out"></div>
+
+</body>
+</html>
