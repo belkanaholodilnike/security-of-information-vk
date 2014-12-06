@@ -169,13 +169,13 @@ svkm.basic.executeWithMyKeyOrGenerate = function(callback) {
   svkm.basic.executeWithMyKey(function (myKey) {
     if (!myKey) {
       myKey = svkm.crypto.elgamal.generateKeyPair();
-      removeMsgCallback();
       svkm.ui.showInfoMessage("Готово!", 3000);
       chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey},
         function (response) {
           callback(myKey);
         });
     }
+    removeMsgCallback();
   });
 }
 
