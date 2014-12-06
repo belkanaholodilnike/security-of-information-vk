@@ -9,7 +9,10 @@ function onSendButtonClick() {
   });
   svkm.ui.showInfoMessage("Готово!", 3000);
   var text = getTextFromIframe();
-  svkm.basic.sendMessage(text);
+  if (text != '') {
+    svkm.basic.sendMessage(text);
+    setTextToIframe('');
+  }
 }
 
 function getTextFromIframe() {
