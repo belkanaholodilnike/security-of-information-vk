@@ -19,6 +19,21 @@
 </head>
 <body>
 <script language="JavaScript">
+    var entityMap = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': '&quot;',
+        "'": '&#39;',
+        "/": '&#x2F;'
+    };
+
+    function escapeHtml(string) {
+        return String(string).replace(/[&<>"'\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
+
     function a () {
         var out = document.getElementById('out');
 
@@ -31,7 +46,7 @@
     }
 
     function randomTest() {
-        var out = document.getElementById("out-random-success-num");
+        var out = document.getElementById("out");
         out.innerHTML = "";
         out.innerHTML += "Размер буфера: " + mouseCoordBuffer.length + "<br/>";
 
@@ -44,13 +59,29 @@
         out.innerHTML += "Сгенерировано: " + counter;
     }
 
+    function testEncryptDecrypt() {
+        var out = document.getElementById("out");
+        out.innerHTML = "";
+        var message = "hello";
+        var key = svkm.crypto.elgamal.generateKeyPair();
+        var encrypted = svkm.crypto.elgamal.encrypt(message, key['pubKey'], key);
+        var decryptedReceived = svkm.crypto.elgamal.decryptReceived(encrypted, key);
+        var decryptedSended = svkm.crypto.elgamal.decryptSended(encrypted, key);
+
+        out.innerHTML += escapeHtml("encrypted: " + encrypted);
+        out.innerHTML += '<br/>';
+        out.innerHTML += escapeHtml("decrpted sended: " + decryptedSended);
+        out.innerHTML += '<br/>';
+        out.innerHTML += escapeHtml("decrpted received: " + decryptedReceived);
+        out.innerHTML += '<br/>';
+    }
+
 </script>
 <label for="in"></label>
 <input id="in" type="text" />
     <button id="b" onclick="a()">Click me!</button>
-    <button id="encrypted-text"></button>
+    <button id="encrypted-text" onclick="testEncryptDecrypt()">Test encyption</button>
     <button id="c" onclick="randomTest()">Click me random!</button>
-<div id="out-random-success-num"></div>
 <div id="out"></div>
 
 </body>
