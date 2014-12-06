@@ -4,6 +4,9 @@
 
 var im_editable = null;
 
+var preprocessedMsgs = {};
+var lastProcessedMsgId = null;
+
 svkm.basic.executeWithUserPublicKey = function (func) {
   chrome.runtime.sendMessage({
       eventName: "getPublicKeyForUser",
@@ -104,7 +107,6 @@ svkm.basic.registerForNewMessageCallback = function (callback) {
   })();
 
   observeDOM( document.getElementById('im_rows'), function() {
-    console.log('dom changed');
     svkm.basic.doForAllMessages(callback);
   });
 };
@@ -146,56 +148,53 @@ svkm.basic.doWhenCanEncryptMessage = function(callback) {
   }
 }
 
-svkm.basic.processMsg = function (msgElement, newMsg) {
-  var text = msgElement.textContent;
+function hideMessageElement(msgElement) {
+  msgElement.parentElement.parentElement.parentElement.style.display = 'none';
+}
 
-  function hideMessageElement(msgElement) {
-    msgElement.parentElement.parentElement.parentElement.style.display = 'none';
+function getMessageDirection(msgElement) {
+  var className = msgElement.parentElement.parentElement.parentElement.className;
+  if (className.match(/im_in/g))
+    return 'in';
+  if (className.match(/im_out/g))
+    return 'out';
+  return null;
+}
+
+svkm.basic.processMessage = function (msgElement) {
+  function isMessageNew(msgId) {
+    return (lastProcessedMsgId == null || lastProcessedMsgId < msgId);
   }
 
-  // On encrypted message
-  if (text.lastIndexOf(MESSAGE_TAG_ENCRYPTED, 0) === 0) {
-    var msg = text.substr(MESSAGE_TAG_ENCRYPTED.length);
-    svkm.basic.executeWithMyKey(function (myKey) {
-      if (!myKey) {
-        console.log("Couldn't decrypt message, since my private key is not yet generated");
-        return;
-      }
-      // TODO: add decryption
-      var decryptedText = svkm.crypto.elgamal.decryptReceived(msg, myKey);
-      msgElement.textContent = decryptedText;
-      //msgElement.textContent = CryptoJS.AES.decrypt(msg, myPrivateKey).toString(CryptoJS.enc.Utf8);
-    });
-  } else if (text.lastIndexOf(MESSAGE_TAG_KEY_RESPONSE, 0) === 0) {
-    // On key response
+  var msgId = svkm.basic.getMessageId(msgElement);
+  var msgPreprocessed = preprocessedMsgs[msgId];
 
-    hideMessageElement(msgElement);
-    if (newMsg) {
-      var keyString = text.substr(MESSAGE_TAG_KEY_RESPONSE.length);
-      var key = JSON.parse(keyString);
-      var userId = svkm.basic.getParameterByName("sel");
-      chrome.runtime.sendMessage({eventName: "insertKeyForUser", userId: userId, key: key},
-        function (response) {
-          svkm.ui.enableSendingButton(svkm.ui.getSecureIframe());
-        });
-      console.log("Received key " + JSON.stringify(key) + " for user " + userId);
+  if (msgPreprocessed.type == MESSAGE_TAG_ENCRYPTED) {
+    if (isMessageNew(msgId)) {
+      var msgCrypted = msgPreprocessed.text;
+      svkm.basic.executeWithMyKey(function (myKey) {
+        if (!myKey) {
+          console.log("Couldn't decrypt message, since my private key is not yet generated");
+          return;
+        }
+        var decryptedText = null;
+        if (msgPreprocessed.direction == 'in') {
+          decryptedText = svkm.crypto.elgamal.decryptReceived(msgCrypted, myKey);
+        } else {
+          decryptedText = svkm.crypto.elgamal.decryptSended(msgCrypted, myKey);
+        }
+        msgElement.textContent = decryptedText;
+      });
     }
-  } else if (text.lastIndexOf(MESSAGE_TAG_KEY_REFUSE, 0) === 0) {
-    // On key refusal
 
-    hideMessageElement(msgElement);
-    if (newMsg) {
-      alert("Собеседник отказался пересылать вам свой открытый ключ. Пока ваш собеседник не перешлет вам открытый " +
-        "ключ, вы не сможете вести зашифрованную переписку.");
-    }
-  } else if (text.lastIndexOf(MESSAGE_TAG_KEY_REQUEST, 0) === 0) {
-    // On key request
-
-    hideMessageElement(msgElement);
-    if (newMsg) {
-      if (confirm('Собеседник запросил ваш открытый ключ, что позволит ему шифровать сообщения, посылаемые вам. ' +
-        'Разрешить передачу ключа?')) {
-          svkm.basic.doWhenCanGenerateKey(function() {
+  } else if (msgPreprocessed.type == MESSAGE_TAG_KEY_REQUEST) {
+    if (msgPreprocessed.direction == 'out') {
+      console.log("ignoring my own key request message");
+    } else {
+      if (isMessageNew(msgId)) {
+        if (confirm('Собеседник запросил ваш открытый ключ, что позволит ему шифровать сообщения, посылаемые вам. ' +
+          'Разрешить передачу ключа?')) {
+          svkm.basic.doWhenCanGenerateKey(function () {
             var removeMsgCallback = svkm.ui.showInfoMessageWithSpinner("Подождите, идет генерация ключа...");
             svkm.basic.executeWithMyKey(function (myKey) {
               if (!myKey) {
@@ -210,16 +209,86 @@ svkm.basic.processMsg = function (msgElement, newMsg) {
               svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKeyString);
               svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000)
             });
-         });
-      } else {
-        svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REFUSE);
+          });
+        } else {
+          svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REFUSE);
+        }
+      }
+    }
+  } else if (msgPreprocessed.type == MESSAGE_TAG_KEY_REFUSE) {
+    if (preprocessedMsgs.direction == 'out') {
+      console.log("ignoring my own refuse message");
+    } else {
+      if (isMessageNew(msgId)) {
+        alert("Собеседник отказался пересылать вам свой открытый ключ. Пока ваш собеседник не перешлет вам открытый " +
+          "ключ, вы не сможете вести зашифрованную переписку.");
+      }
+    }
+
+  } else if (msgPreprocessed.type == MESSAGE_TAG_KEY_RESPONSE) {
+    if (preprocessedMsgs.direction == 'out') {
+      console.log("ignoring my own key response");
+    } else {
+      if (isMessageNew(msgId)) {
+        var keyString = preprocessedMsgs.text;
+        var key = JSON.parse(keyString);
+        var userId = svkm.basic.getParameterByName("sel");
+        chrome.runtime.sendMessage({eventName: "insertKeyForUser", userId: userId, key: key},
+          function (response) {
+            svkm.ui.enableSendingButton(svkm.ui.getSecureIframe());
+          });
+        console.log("Received key " + JSON.stringify(key) + " for user " + userId);
       }
     }
   }
+
+  if (lastProcessedMsgId == null || lastProcessedMsgId < msgId) {
+    lastProcessedMsgId = msgId;
+    console.log('LAST PROCESSED MSG: ' + lastProcessedMsgId);
+  }
 };
 
-var lastProcessedMsgId = null;
-var processedMsgs = {};
+svkm.basic.preprocessMessage = function(msgElement) {
+  var msgId = svkm.basic.getMessageId(msgElement);
+  var msgText = msgElement.textContent;
+  var messageEntry = {};
+
+  messageEntry.direction = getMessageDirection(msgElement);
+  if (msgText.lastIndexOf(MESSAGE_TAG_ENCRYPTED, 0) === 0) {
+    messageEntry.type = MESSAGE_TAG_ENCRYPTED;
+    messageEntry.text = msgText.substr(MESSAGE_TAG_ENCRYPTED.length);
+    msgElement.textContent = '*encrypted*';
+  } else if (msgText.lastIndexOf(MESSAGE_TAG_KEY_REFUSE, 0) === 0) {
+    messageEntry.type = MESSAGE_TAG_KEY_REFUSE;
+    hideMessageElement(msgElement);
+  } else if (msgText.lastIndexOf(MESSAGE_TAG_KEY_REQUEST, 0) === 0) {
+    messageEntry.type = MESSAGE_TAG_KEY_REQUEST;
+    messageEntry.text = msgText.substr(MESSAGE_TAG_KEY_REQUEST.length);
+    hideMessageElement(msgElement);
+  } else if (msgText.lastIndexOf(MESSAGE_TAG_KEY_RESPONSE, 0) === 0) {
+    messageEntry.type = MESSAGE_TAG_KEY_RESPONSE;
+    hideMessageElement(msgElement);
+  }
+
+  preprocessedMsgs[msgId] = messageEntry;
+}
+
+svkm.basic.preprocessMessages = function() {
+  svkm.basic.doForAllMessages(function(msgElement) {
+    svkm.basic.preprocessMessage(msgElement);
+  });
+}
+
+Array.max = function( array ){
+  if (array.length == 0)
+    return null;
+  var result = array[0];
+  for (var i = 0; i < array.length; i++) {
+    if (array[i] > result)
+      result = array[i];
+  }
+  return result;
+};
 
 svkm.basic.urlChanged = function () {
     var imEditableId = svkm.basic.getImEditableId();
@@ -231,22 +300,36 @@ svkm.basic.urlChanged = function () {
     //messageTextEdit.textContent = "Text injected " + imEditableId;
 
   if (svkm.basic.isPersonalChatImEditableId(imEditableId)) {
-    lastProcessedMsgId = null;
+    preprocessedMsgs = {};
     svkm.basic.replaceVkImEditable();
-    svkm.basic.doForAllMessages(function(msgElement) {
-      svkm.basic.processMsg(msgElement, false);
-      var msgId = svkm.basic.getMessageId(msgElement);
-      if (lastProcessedMsgId == null || lastProcessedMsgId < msgId)
-        lastProcessedMsgId = msgId;
-      processedMsgs[msgId] = true;
-    });
+    svkm.basic.preprocessMessages();
+    var msgIds = Object.keys(preprocessedMsgs);
+    if (msgIds.length > 0)
+      lastProcessedMsgId = Array.max(msgIds);
+    else
+      lastProcessedMsgId = null;
+    console.log('LAST PROCESSED MSG: ' + lastProcessedMsgId);
+//    svkm.basic.doForAllMessages(function(msgElement) {
+//      svkm.basic.processMsg(msgElement, false);
+//      var msgId = svkm.basic.getMessageId(msgElement);
+//      if (lastProcessedMsgId == null || lastProcessedMsgId < msgId)
+//        lastProcessedMsgId = msgId;
+//      preprocessedMsgs[msgId] = true;
+//    });
     svkm.basic.registerForNewMessageCallback(function(msgElement) {
       var msgId = svkm.basic.getMessageId(msgElement);
-      if (processedMsgs[msgId])
+      if (preprocessedMsgs[msgId])
         return;
-      var newMsg = (lastProcessedMsgId == null || msgId > lastProcessedMsgId);
-      svkm.basic.processMsg(msgElement, newMsg);
-      processedMsgs[msgId] = true;
+      svkm.basic.preprocessMessage(msgElement);
+      svkm.basic.processMessage(msgElement);
+//      var msgId = svkm.basic.getMessageId(msgElement);
+//      if (preprocessedMsgs[msgId])
+//        return;
+//      var newMsg = (lastProcessedMsgId == null || msgId > lastProcessedMsgId);
+//      if (!newMsg)
+//        return;
+//      svkm.basic.processMsg(msgElement, true);
+//      preprocessedMsgs[msgId] = true;
     });
   } else {
     svkm.basic.restoreVkImEditable();
