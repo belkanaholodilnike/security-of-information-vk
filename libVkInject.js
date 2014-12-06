@@ -162,6 +162,21 @@ function getMessageDirection(msgElement) {
   return null;
 }
 
+svkm.basic.executeWithMyKeyOrGenerate = function(callback) {
+  var removeMsgCallback = svkm.ui.showInfoMessageWithSpinner("Подождите, идет генерация ключа...");
+  svkm.basic.executeWithMyKey(function (myKey) {
+    if (!myKey) {
+      myKey = svkm.crypto.elgamal.generateKeyPair();
+      removeMsgCallback();
+      svkm.ui.showInfoMessage("Готово!", 3000);
+      chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey},
+        function (response) {
+          callback(myKey);
+        });
+    }
+  });
+}
+
 svkm.basic.processMessage = function (msgElement) {
   function isMessageNew(msgId) {
     return (lastProcessedMsgId == null || lastProcessedMsgId < msgId);
@@ -204,22 +219,11 @@ svkm.basic.processMessage = function (msgElement) {
       if (isMessageNew(msgId)) {
         if (confirm('Собеседник запросил ваш открытый ключ, что позволит ему шифровать сообщения, посылаемые вам. ' +
           'Разрешить передачу ключа?')) {
-          svkm.basic.doWhenCanGenerateKey(function () {
-            var removeMsgCallback = svkm.ui.showInfoMessageWithSpinner("Подождите, идет генерация ключа...");
-            svkm.basic.executeWithMyKey(function (myKey) {
-              if (!myKey) {
-                myKey = svkm.crypto.elgamal.generateKeyPair();
-                removeMsgCallback();
-                svkm.ui.showInfoMessage("Готово!", 3000);
-                chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey},
-                  function (response) {
-                  });
-              }
-              var myKeyString = JSON.stringify(myKey['pubKey']);
-              svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKeyString);
-              svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000)
-            });
-          });
+          svkm.basic.doWhenCanGenerateKey(svkm.basic.executeWithMyKeyOrGenerate(function(myKey) {
+            var myKeyString = JSON.stringify(myKey['pubKey']);
+            svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKeyString);
+            svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000);
+          }));
         } else {
           svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REFUSE);
         }
@@ -362,7 +366,7 @@ svkm.basic.sendMessage = function (text) {
 
     svkm.basic.doWhenCanEncryptMessage(function () {
       svkm.basic.executeWithUserPublicKey(function(publicKey) {
-        svkm.basic.executeWithMyKey(function (myKey) {
+        svkm.basic.executeWithMyKeyOrGenerate(function (myKey) {
           var closeHandler = svkm.ui.showInfoMessageWithSpinner("Подождите, пока сообщение шифруется...");
           var encryptedText = svkm.crypto.elgamal.encrypt(text, publicKey, myKey);
           closeHandler();

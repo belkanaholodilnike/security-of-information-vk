@@ -7,8 +7,7 @@ var LIMIT_BUFFER_LENGTH = 1000000;
  */
 function mouseMoved(docElement) {
   if (mouseCoordBuffer.length < LIMIT_BUFFER_LENGTH) {
-    mouseCoordBuffer.push(docElement.pageX);
-    mouseCoordBuffer.push(docElement.pageY);
+    mouseCoordBuffer.push(docElement.pageX ^ docElement.pageY);
   }
 }
 
