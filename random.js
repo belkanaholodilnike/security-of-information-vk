@@ -55,7 +55,7 @@ svkm.crypto.math.isCanGenerate = function (num) {
 svkm.crypto.math.randomNum = function (bitsNeeded) {
   var res = new Decimal(0);
   var j = 0;
-  while (res.equals(0)) {
+  while (res.lessThan(2)) {
     var nIters = Math.floor(bitsNeeded / 512);
 
     if(mouseCoordBuffer.length < 7 * (nIters + 1 + j)) {
