@@ -180,15 +180,20 @@ svkm.basic.processMessage = function (msgElement) {
             return;
           }
           var decryptedText = null;
+          var closeHandler = svkm.ui.showInfoMessageWithSpinner("Подождите, пока сообщение расшифровывается...");
           if (msgPreprocessed.direction == 'in') {
             decryptedText = svkm.crypto.elgamal.decryptReceived(msgCrypted, myKey);
           } else {
             decryptedText = svkm.crypto.elgamal.decryptSended(msgCrypted, myKey);
           }
+          closeHandler();
+          svkm.ui.showInfoMessage("Готово!", 1000);
           msgElement.textContent = decryptedText;
+          $(msgElement).removeClass("encrypted-message");
+          $(msgElement).addClass("secure-message");
         });
       }
-    
+
       if (nextMessageFromMeNeedToDecrypt) {
         nextMessageFromMeNeedToDecrypt = false;
       }
@@ -245,6 +250,8 @@ svkm.basic.processMessage = function (msgElement) {
         console.log("Received key " + JSON.stringify(key) + " for user " + userId);
       }
     }
+  } else {
+    // nothing
   }
 
   if (lastProcessedMsgId == null || lastProcessedMsgId < msgId) {
@@ -262,6 +269,8 @@ svkm.basic.preprocessMessage = function(msgElement) {
   if (msgText.lastIndexOf(MESSAGE_TAG_ENCRYPTED, 0) === 0) {
     messageEntry.type = MESSAGE_TAG_ENCRYPTED;
     messageEntry.text = msgText.substr(MESSAGE_TAG_ENCRYPTED.length);
+    $(msgElement).removeClass('unsecure-message');
+    $(msgElement).addClass('encrypted-message');
     msgElement.textContent = '*encrypted*';
   } else if (msgText.lastIndexOf(MESSAGE_TAG_KEY_REFUSE, 0) === 0) {
     messageEntry.type = MESSAGE_TAG_KEY_REFUSE;
@@ -273,6 +282,9 @@ svkm.basic.preprocessMessage = function(msgElement) {
     messageEntry.type = MESSAGE_TAG_KEY_RESPONSE;
     messageEntry.text = msgText.substr(MESSAGE_TAG_KEY_RESPONSE.length);
     hideMessageElement(msgElement);
+  } else {
+    messageEntry.type = 'unencrypted';
+    $(msgElement).addClass('unsecure-message');
   }
 
   preprocessedMsgs[msgId] = messageEntry;
@@ -351,7 +363,10 @@ svkm.basic.sendMessage = function (text) {
     svkm.basic.doWhenCanEncryptMessage(function () {
       svkm.basic.executeWithUserPublicKey(function(publicKey) {
         svkm.basic.executeWithMyKey(function (myKey) {
+          var closeHandler = svkm.ui.showInfoMessageWithSpinner("Подождите, пока сообщение шифруется...");
           var encryptedText = svkm.crypto.elgamal.encrypt(text, publicKey, myKey);
+          closeHandler();
+          svkm.ui.showInfoMessage("Готово!", 1000);
           imEditable.textContent = MESSAGE_TAG_ENCRYPTED + encryptedText;
           nextMessageFromMeNeedToDecrypt = true;
           document.getElementById("im_send").dispatchEvent(new Event("click"));
