@@ -82,6 +82,28 @@ button.button_blue:disabled {
     padding: 4px;
 }
 
+.unsecure-message {
+    background-color: rgb(237, 225, 220);
+    border: 1px solid red;
+    color: red;
+    padding: 4px;
+}
+
+.encrypted-message {
+    background-color: rgb(201, 204, 196);
+    border: 1px solid #666666;
+    color: #656363;
+    font-style: italic;
+    padding: 4px;
+}
+
+.secure-message {
+    background-color: rgb(205, 237, 183);
+    border: 1px solid #075100;
+    color: #075100;
+    padding: 4px;
+}
+
 .security-status-label {
     padding-bottom: 4px;
     font-size: 12px;
