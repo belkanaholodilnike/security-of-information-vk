@@ -76,12 +76,24 @@
         out.innerHTML += '<br/>';
     }
 
+    function testPowByMod() {
+        var inText = document.getElementById("in");
+        var nums = inText.value.split(";");
+
+        var result = svkm.crypto.math.powByMod(new Decimal(nums[0]), new Decimal(nums[1]), new Decimal(nums[2]));
+
+        var out = document.getElementById("out");
+        out.innerHTML = "";
+        out.innerHTML = result.toString();
+    }
+
 </script>
 <label for="in"></label>
 <input id="in" type="text" />
     <button id="b" onclick="a()">Click me!</button>
     <button id="encrypted-text" onclick="testEncryptDecrypt()">Test encyption</button>
     <button id="c" onclick="randomTest()">Click me random!</button>
+    <button id="powByMod_Button" onclick="testPowByMod()">Test power by mod</button>
 <div id="out"></div>
 
 </body>

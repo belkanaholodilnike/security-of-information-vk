@@ -36,15 +36,20 @@ svkm.crypto.math.powByMod = function (x, y, t) {
   console.log("powByMod(" + x + "," + y + "," + t + ")");
   console.log("len of powers[]: " + powers.length);
 
-  var result = new Decimal(1);
-  for(var key in powers) {
-    var tmpResult = new Decimal(x);
-    for(var i = 0; i < powers[key]; i++) {
-      tmpResult = tmpResult.pow(2);
-      tmpResult = tmpResult.modulo(t);
-    }
+  var cache = [];
+  // Calculate cache
+  var maxPower = powers[powers.length - 1];
+  var tmpResult = new Decimal(x);
+  cache[0] = tmpResult.modulo(t);
+  for(var i = 1; i <= maxPower; i++) {
+    tmpResult = tmpResult.pow(2);
+    tmpResult = tmpResult.modulo(t);
+    cache[i] = tmpResult;
+  }
 
-    result = result.times(tmpResult);
+  var result = new Decimal(1);
+  for(var key = powers.length - 1; key >=0; key--) {
+    result = result.times(cache[powers[key]]);
     result = result.modulo(t);
   }
 
