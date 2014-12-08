@@ -52,6 +52,10 @@ svkm.crypto.math.isCanGenerate = function (num) {
 };
 
 svkm.crypto.math.randomNum = function (bitsNeeded) {
+  if(bitsNeeded % 4 != 0) {
+    console.log("We can generate only numbers with bits num modulo 4 == 0");
+    return null;
+  }
   var res = new Decimal(0);
   var j = 0;
   while (res.lessThan(2)) {
@@ -69,9 +73,9 @@ svkm.crypto.math.randomNum = function (bitsNeeded) {
       generatedString += hashString;
     }
 
-    generatedString = hashString.substr(0, (bitsNeeded / 4) + 1);
+    generatedString = hashString.substr(0, Math.floor(bitsNeeded / 4));
     var g = new Decimal(generatedString, 16);
-    res = g.modulo(new Decimal(2).pow(bitsNeeded));
+    res = g;
     j++;
   }
 

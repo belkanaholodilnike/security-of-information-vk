@@ -60,20 +60,38 @@
     }
 
     function testEncryptDecrypt() {
+        var starttime = new Date().getTime();
+        svkm.crypto.KEYSIZE = 2048;
         var out = document.getElementById("out");
         out.innerHTML = "";
         var message = "hello";
-        var key = svkm.crypto.elgamal.generateKeyPair();
-        var encrypted = svkm.crypto.elgamal.encrypt(message, key['pubKey'], key);
-        var decryptedReceived = svkm.crypto.elgamal.decryptReceived(encrypted, key);
-        var decryptedSended = svkm.crypto.elgamal.decryptSended(encrypted, key);
 
+        var key = svkm.crypto.elgamal.generateKeyPair();
+        var generatedKey = new Date().getTime();
+
+        var encrypted = svkm.crypto.elgamal.encrypt(message, key['pubKey'], key);
+        var encryptedTime = new Date().getTime();
+
+        var decryptedReceived = svkm.crypto.elgamal.decryptReceived(encrypted, key);
+        var decryptedTime = new Date().getTime();
+
+        var decryptedSended = svkm.crypto.elgamal.decryptSended(encrypted, key);
+        var decryptedTime2 = new Date().getTime();
+
+        out.innerHTML += "Key size: " + svkm.crypto.KEYSIZE + "<br/>";
         out.innerHTML += escapeHtml("encrypted: " + encrypted);
         out.innerHTML += '<br/>';
-        out.innerHTML += escapeHtml("decrpted sended: " + decryptedSended);
+        out.innerHTML += escapeHtml("decrypted sended: " + decryptedSended);
         out.innerHTML += '<br/>';
-        out.innerHTML += escapeHtml("decrpted received: " + decryptedReceived);
+        out.innerHTML += escapeHtml("decrypted received: " + decryptedReceived);
         out.innerHTML += '<br/>';
+
+        out.innerHTML += "Key generated in: " + (generatedKey - starttime) + " ms<br/>";
+        out.innerHTML += "Encrypted in: " + (encryptedTime - generatedKey) + " ms</br>";
+        out.innerHTML += "Decrypted received in: " + (decryptedTime - encryptedTime) + " ms<br/>";
+        out.innerHTML += "Decrypted sended in: " + (decryptedTime2 - decryptedTime) + " ms<br/>";
+        out.innerHTML += "All in: " + (decryptedTime2 - starttime) + " ms<br/>";
+
     }
 
     function testPowByMod() {
@@ -87,6 +105,15 @@
         out.innerHTML = result.toString();
     }
 
+    function testGenerateKey() {
+        svkm.crypto.KEYSIZE = 2048;
+        var starttime = new Date().getTime();
+        var out = document.getElementById("out");
+        out.innerHTML = "";
+        out.innerHTML += JSON.stringify(svkm.crypto.elgamal.generateKeyPair()) + "<br>";
+        out.innerHTML += "Time: " + (new Date().getTime() - starttime);
+    }
+
 </script>
 <label for="in"></label>
 <input id="in" type="text" />
@@ -94,6 +121,7 @@
     <button id="encrypted-text" onclick="testEncryptDecrypt()">Test encyption</button>
     <button id="c" onclick="randomTest()">Click me random!</button>
     <button id="powByMod_Button" onclick="testPowByMod()">Test power by mod</button>
+    <button id="generationKey_Button" onclick="testGenerateKey()">Test key generation</button>
 <div id="out"></div>
 
 </body>
