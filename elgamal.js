@@ -16,7 +16,7 @@ generatedPrimeNumbers = {
 //  new Decimal("268156158598851941991480499964116922549587316411847867554471228874435280601470939536037485963338068553" +
 //  "80063716372972101707507765623893139892867298012168351")];
 
-svkm.crypto.KEYSIZE = 8;
+svkm.crypto.KEYSIZE = 1024;
 
 svkm.crypto.math.decompositionOnTwoPower = function (n) {
   var wn = new Decimal(n);

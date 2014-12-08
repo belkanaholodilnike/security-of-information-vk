@@ -6,4 +6,4 @@ svkm.crypto.math = function () {};
 svkm.crypto.elgamal = function() {};
 
 
-Decimal.config({ precision: 1540 });
+Decimal.config({ precision: 840 });
