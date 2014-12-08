@@ -2,16 +2,38 @@
  * Created by dmitry on 10/12/14.
  */
 
-function init() {
-    var bgPage = chrome.extension.getBackgroundPage();
-    bgPage.log("hi");
-    var logDiv = document.getElementById("popup-log");
-    alert('fddf');
-    for (var i = 0; i < messageLog.length; i++) {
-        var message = messageLog[i];
-        logDiv.innerHTML += "<div class='popup-log-message'>" + message + "</div>";
-    }
-};
+$(document).ready(function() {
+  setUpEnableDisableButton();
+});
 
-document.addEventListener('DOMContentLoaded', init);
+function setUpEnableDisableButton() {
+  chrome.tabs.getSelected(null, function (tab) {
+    chrome.tabs.sendMessage(tab.id, {event: "isSecureFormEnabled"}, function (response) {
+      if (response.result) {
+        $("#enable-disable-button").text('Выключить');
+      } else {
+        $("#enable-disable-button").text('Включить');
+      }
+    });
+  });
+  $("#enable-disable-button").click(function () {
+    chrome.tabs.getSelected(null, function (tab) {
+      chrome.tabs.sendMessage(tab.id, {event: "isSecureFormEnabled"}, function (response) {
+        if (response.result) {
+          chrome.tabs.getSelected(null, function (tab) {
+            chrome.tabs.sendMessage(tab.id, {event: "disableForm"}, function (response) {
+              $("#enable-disable-button").text('Включить');
+            });
+          });
+        } else {
+          chrome.tabs.getSelected(null, function (tab) {
+            chrome.tabs.sendMessage(tab.id, {event: "enableForm"}, function (response) {
+              $("#enable-disable-button").text('Выключить');
+            });
+          });
+        }
+      });
+    });
+  });
+}
 

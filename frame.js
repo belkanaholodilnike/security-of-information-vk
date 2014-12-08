@@ -3,10 +3,6 @@
  */
 
 function onSendButtonClick() {
-  chrome.runtime.sendMessage({eventName: "messageSent", message: getTextFromIframe()},
-      function(response) {
-      console.log(response.farewell);
-  });
   svkm.ui.showInfoMessage("Готово!", 3000);
   var text = getTextFromIframe();
   if (text != '') {

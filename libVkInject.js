@@ -314,15 +314,18 @@ Array.max = function( array ){
 };
 
 svkm.basic.urlChanged = function () {
-    var imEditableId = svkm.basic.getImEditableId();
-    if(imEditableId == null) {
-        return null;
-    }
+  var imEditableId = svkm.basic.getImEditableId();
+  if(imEditableId == null) {
+      return null;
+  }
 
-    //var messageTextEdit = document.getElementById(imEditableId);
-    //messageTextEdit.textContent = "Text injected " + imEditableId;
+  var shouldUseSecureForm = true;
+  if (!(svkm.basic.isPersonalChatImEditableId(imEditableId)) ||
+    !svkm.basic.isSecureFormEnabled()) {
+    shouldUseSecureForm = false;
+  }
 
-  if (svkm.basic.isPersonalChatImEditableId(imEditableId)) {
+  if (shouldUseSecureForm) {
     preprocessedMsgs = {};
     svkm.basic.replaceVkImEditable();
     svkm.basic.preprocessMessages();
@@ -331,28 +334,13 @@ svkm.basic.urlChanged = function () {
       lastProcessedMsgId = Array.max(msgIds);
     else
       lastProcessedMsgId = null;
-    console.log('LAST PROCESSED MSG: ' + lastProcessedMsgId);
-//    svkm.basic.doForAllMessages(function(msgElement) {
-//      svkm.basic.processMsg(msgElement, false);
-//      var msgId = svkm.basic.getMessageId(msgElement);
-//      if (lastProcessedMsgId == null || lastProcessedMsgId < msgId)
-//        lastProcessedMsgId = msgId;
-//      preprocessedMsgs[msgId] = true;
-//    });
+
     svkm.basic.registerForNewMessageCallback(function(msgElement) {
       var msgId = svkm.basic.getMessageId(msgElement);
       if (preprocessedMsgs[msgId])
         return;
       svkm.basic.preprocessMessage(msgElement);
       svkm.basic.processMessage(msgElement);
-//      var msgId = svkm.basic.getMessageId(msgElement);
-//      if (preprocessedMsgs[msgId])
-//        return;
-//      var newMsg = (lastProcessedMsgId == null || msgId > lastProcessedMsgId);
-//      if (!newMsg)
-//        return;
-//      svkm.basic.processMsg(msgElement, true);
-//      preprocessedMsgs[msgId] = true;
     });
   } else {
     svkm.basic.restoreVkImEditable();
@@ -440,6 +428,11 @@ svkm.basic.restoreVkImEditable = function () {
   var vk_im_texts = document.getElementById("im_texts");
   vk_im_texts.style.display = "";
 
+  var vk_im_editable = svkm.basic.getImEditable();
+  if(vk_im_editable != null) {
+    vk_im_editable.style.display = "";
+  }
+
   svkm.basic.showVkSecurityWarningBox();
 }
 
@@ -458,12 +451,16 @@ svkm.basic.getExchangeKeysButton = function (iframe) {
   return iframe.contentWindow.document.getElementById("svkm_exchange_keys_button");
 }
 
-svkm.basic.getTestButton = function(iframe) {
-  return iframe.contentWindow.document.getElementById("svkm_test_button");
+svkm.basic.getSecureTextarea = function (iframe) {
+  return iframe.contentWindow.document.getElementById("svkm_message");
 }
 
 svkm.basic.getSendMessageButton = function(iframe) {
   return iframe.contentWindow.document.getElementById("svkm_send_button");
+}
+
+svkm.basic.getSendMessageTextarea = function(iframe) {
+  return iframe.contentWindow.document.getElementById("svkm_message");
 }
 
 svkm.ui.disableSendingButton = function (iframe) {
@@ -558,8 +555,16 @@ svkm.basic.replaceVkImEditable = function () {
   iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
   iframe.onload = function () {
     svkm.basic.getSendMessageButton(iframe).addEventListener("click", onSendButtonClick);
-    svkm.basic.getTestButton(iframe).addEventListener("click", test);
     svkm.basic.getExchangeKeysButton(iframe).addEventListener("click", svkm.basic.exchangeKeys);
+    var textarea = svkm.basic.getSecureTextarea(iframe);
+    $(textarea).keypress(function(event) {
+      var keyCode = event.keyCode;
+      if ((keyCode == 10 || keyCode == 13) && (event.ctrlKey || event.metaKey)) {
+        var text = textarea.textContent;
+        svkm.basic.sendMessage(text);
+        textarea.textContent = '';
+      }
+    });
     chrome.runtime.sendMessage({eventName: "getPublicKeyForUser", id:svkm.basic.getParameterByName("sel")},
       function(response) {
         console.log("Public key for user " + svkm.basic.getParameterByName("sel") + " is " + response);
