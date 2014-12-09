@@ -140,8 +140,6 @@ svkm.crypto.elgamal.encrypt = function (text, pubKey, myKey) {
   if(aesKey == null)
     return null;
 
-  console.log("encrypt: aesKey = " + aesKey.toString());
-
   var elGamalSessionKey = svkm.crypto.math.randomNum(svkm.crypto.KEYSIZE);
   if(elGamalSessionKey == null)
     return null;
@@ -153,7 +151,10 @@ svkm.crypto.elgamal.encrypt = function (text, pubKey, myKey) {
   var bMy = svkm.crypto.math.powByMod(myKey['pubKey'][2], elGamalSessionKey, myKey['pubKey'][0])
       .times(aesKey.modulo(myKey['pubKey'][0]));
 
-  var aesEncrypted = CryptoJS.AES.encrypt(text, aesKey.toString());
+  var textHash = CryptoJS.SHA3(text).toString(CryptoJS.enc.Base64);
+  console.log("Message hash: " + textHash);
+
+  var aesEncrypted = CryptoJS.AES.encrypt(textHash + text, aesKey.toString());
 
   return a.toString() + ";" + b.toString() + ";" +
       aMy.toString() + ";" + bMy.toString() + ";" + aesEncrypted;
@@ -176,7 +177,15 @@ svkm.crypto.elgamal.decrypt = function (a, b, text, myKey) {
 
   console.log("decrypt: aesKey = " + aesKey.toString());
 
-  return CryptoJS.AES.decrypt(text, aesKey.toString()).toString(CryptoJS.enc.Utf8);
+  var decryptedText = CryptoJS.AES.decrypt(text, aesKey.toString()).toString(CryptoJS.enc.Utf8);
+  var messageText = decryptedText.substr(88);
+  var textHash = CryptoJS.SHA3(messageText).toString(CryptoJS.enc.Base64);
+  var storedHash = decryptedText.substr(0, 88);
+  console.log("Real message hash: " + textHash + ", stored hash: " + storedHash);
+  if(textHash == storedHash)
+    return messageText;
+
+  return null;
 };
 
 svkm.crypto.elgamal.decryptReceived = function (text, myKey) {
