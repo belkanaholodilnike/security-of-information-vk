@@ -3,6 +3,8 @@
 <head lang="ru">
     <meta charset="UTF-8">
     <title>Test page</title>
+    <script type="text/javascript" src="jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="Chart.min.js"></script>
     <script type="text/javascript" src="sha3.js"></script>
     <script type="text/javascript" src="aes.js"></script>
     <script type="text/javascript" src="decimal.js"></script>
@@ -11,7 +13,6 @@
     <script type="text/javascript" src="aes.js"></script>
     <script type="text/javascript" src="sha3.js"></script>
     <script type="text/javascript" src="random.js"></script>
-    <script type="text/javascript" src="elgamal.js"></script>
     <script type="text/javascript" src="libVkInject.js"></script>
     <script type="text/javascript" src="secureInjection.js"></script>
     <script type="text/javascript" src="frame.js"></script>
@@ -59,9 +60,9 @@
         out.innerHTML += "Сгенерировано: " + counter;
     }
 
-    function testEncryptDecrypt() {
+    function testEncryptDecrypt(keySize) {
         var starttime = new Date().getTime();
-        svkm.crypto.KEYSIZE = 8;
+        svkm.crypto.KEYSIZE = parseInt(keySize);
         var out = document.getElementById("out");
         out.innerHTML = "";
         var message = "hello";
@@ -86,12 +87,53 @@
         out.innerHTML += escapeHtml("decrypted received: " + decryptedReceived);
         out.innerHTML += '<br/>';
 
-        out.innerHTML += "Key generated in: " + (generatedKey - starttime) + " ms<br/>";
-        out.innerHTML += "Encrypted in: " + (encryptedTime - generatedKey) + " ms</br>";
-        out.innerHTML += "Decrypted received in: " + (decryptedTime - encryptedTime) + " ms<br/>";
-        out.innerHTML += "Decrypted sended in: " + (decryptedTime2 - decryptedTime) + " ms<br/>";
-        out.innerHTML += "All in: " + (decryptedTime2 - starttime) + " ms<br/>";
+        var keyGeneratedInTime = generatedKey - starttime;
+        var encryptedInTime = encryptedTime - generatedKey;
+        var decryptedReceivedInTime = decryptedTime - encryptedTime;
+        var decryptedSendedInTime =  decryptedTime2 - decryptedTime;
+        var allInTime = decryptedTime2 - starttime;
 
+        out.innerHTML += "Key generated in: " + (keyGeneratedInTime) + " ms<br/>";
+        out.innerHTML += "Encrypted in: " + (encryptedInTime) + " ms</br>";
+        out.innerHTML += "Decrypted received in: " + (decryptedReceivedInTime) + " ms<br/>";
+        out.innerHTML += "Decrypted sended in: " + (decryptedSendedInTime) + " ms<br/>";
+        out.innerHTML += "All in: " + (allInTime) + " ms<br/>";
+
+        return {
+            keyGeneration: keyGeneratedInTime,
+            textEncrypt: encryptedInTime,
+            textDecrypt: (decryptedReceivedInTime + decryptedSendedInTime) / 2
+        }
+    }
+
+    function testEncryptDecryptTime(keySize) {
+        var starttime = new Date().getTime();
+        svkm.crypto.KEYSIZE = parseInt(keySize);
+        var message = "hello";
+
+        var key = svkm.crypto.elgamal.generateKeyPair();
+        var generatedKey = new Date().getTime();
+
+        var encrypted = svkm.crypto.elgamal.encrypt(message, key['pubKey'], key);
+        var encryptedTime = new Date().getTime();
+
+        var decryptedReceived = svkm.crypto.elgamal.decryptReceived(encrypted, key);
+        var decryptedTime = new Date().getTime();
+
+        var decryptedSended = svkm.crypto.elgamal.decryptSended(encrypted, key);
+        var decryptedTime2 = new Date().getTime();
+
+        var keyGeneratedInTime = generatedKey - starttime;
+        var encryptedInTime = encryptedTime - generatedKey;
+        var decryptedReceivedInTime = decryptedTime - encryptedTime;
+        var decryptedSendedInTime =  decryptedTime2 - decryptedTime;
+        var allInTime = decryptedTime2 - starttime;
+
+        return {
+            keyGeneration: keyGeneratedInTime,
+            textEncrypt: encryptedInTime,
+            textDecrypt: (decryptedReceivedInTime + decryptedSendedInTime) / 2
+        }
     }
 
     function testPowByMod() {
@@ -114,15 +156,118 @@
         out.innerHTML += "Time: " + (new Date().getTime() - starttime);
     }
 
+    function drawPerfomanceGraph(data) {
+        var ctx = document.getElementById("myChart").getContext("2d");
+        var options = {
+
+            ///Boolean - Whether grid lines are shown across the chart
+            scaleShowGridLines : true,
+
+                //String - Colour of the grid lines
+            scaleGridLineColor : "rgba(0,0,0,.05)",
+
+            //Number - Width of the grid lines
+            scaleGridLineWidth : 1,
+
+            //Boolean - Whether the line is curved between points
+            bezierCurve : true,
+
+            //Number - Tension of the bezier curve between points
+            bezierCurveTension : 0.4,
+
+            //Boolean - Whether to show a dot for each point
+            pointDot : true,
+
+            //Number - Radius of each point dot in pixels
+            pointDotRadius : 4,
+
+            //Number - Pixel width of point dot stroke
+            pointDotStrokeWidth : 1,
+
+            //Number - amount extra to add to the radius to cater for hit detection outside the drawn point
+            pointHitDetectionRadius : 20,
+
+            //Boolean - Whether to show a stroke for datasets
+            datasetStroke : true,
+
+            //Number - Pixel width of dataset stroke
+            datasetStrokeWidth : 2,
+
+            //Boolean - Whether to fill the dataset with a colour
+            datasetFill : true,
+
+            //String - A legend template
+            legendTemplate : "<table>" +
+            "<% for (var i=0; i<datasets.length; i++){%>" +
+                "<tr><td style=\"width:25px; height:25px;" +
+                    "background-color:<%=datasets[i].fillColor%>\">" +
+                "</td><td><%if(datasets[i].label){%><%=datasets[i].label%><%}%></td></tr><%}%></table>"
+        };
+
+        var myNewChart = new Chart(ctx).Line(data, options);
+        var out = document.getElementById("out").innerHTML = myNewChart.generateLegend();
+    }
+
+    function testPerformance() {
+        var keyGenerationTimes = [], encryptionTimes = [], decryptionTimes = [];
+        for(var keySize in generatedPrimeNumbers) {
+            var result = testEncryptDecryptTime(keySize);
+            keyGenerationTimes.push(result.keyGeneration);
+            encryptionTimes.push(result.textEncrypt);
+            decryptionTimes.push(result.textDecrypt);
+        }
+
+        var data = {
+            labels: Object.keys(generatedPrimeNumbers),
+            datasets: [
+                {
+                    label: "Key generation time",
+                    fillColor: "rgba(220,220,220,0.2)",
+                    strokeColor: "rgba(220,220,220,1)",
+                    pointColor: "rgba(220,220,220,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(220,220,220,1)",
+                    data: keyGenerationTimes
+                },
+                {
+                    label: "Text encryption time",
+                    fillColor: "rgba(151,187,205,0.2)",
+                    strokeColor: "rgba(151,187,205,1)",
+                    pointColor: "rgba(151,187,205,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(151,187,205,1)",
+                    data: encryptionTimes
+                },
+                {
+                    label: "Text decryption time",
+                    fillColor: "rgba(151,50,205,0.2)",
+                    strokeColor: "rgba(151,50,205,1)",
+                    pointColor: "rgba(151,50,205,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(151,187,205,1)",
+                    data: decryptionTimes
+                }
+
+            ]
+        };
+
+        drawPerfomanceGraph(data);
+    }
+
 </script>
 <label for="in"></label>
 <input id="in" type="text" />
     <button id="b" onclick="a()">Click me!</button>
-    <button id="encrypted-text" onclick="testEncryptDecrypt()">Test encyption</button>
+    <button id="encrypted-text" onclick="testEncryptDecrypt(8)">Test encyption</button>
     <button id="c" onclick="randomTest()">Click me random!</button>
     <button id="powByMod_Button" onclick="testPowByMod()">Test power by mod</button>
     <button id="generationKey_Button" onclick="testGenerateKey()">Test key generation</button>
+    <button id="Perfomance_Button" onclick="testPerformance()">Test perfomance</button>
 <div id="out"></div>
+<canvas id="myChart" width="1080" height="660"></canvas>
 
 </body>
 </html>

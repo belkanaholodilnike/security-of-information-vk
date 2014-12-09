@@ -51,6 +51,12 @@ svkm.crypto.math.isCanGenerate = function (num) {
   return [true, 100.0];
 };
 
+//**
+// * Function returns four fold random num with no less than specified number of bits
+// * @param num four fold number of bits which generated number must have.
+// * @return string string or null if we couldn't generate string with
+// * specified length.
+// */
 svkm.crypto.math.randomNum = function (bitsNeeded) {
   if(bitsNeeded % 4 != 0) {
     console.log("We can generate only numbers with bits num modulo 4 == 0");
