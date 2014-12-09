@@ -209,12 +209,22 @@
     }
 
     function testPerformance() {
+        document.getElementById("error_out").innerHTML = "";
+        if(!svkm.crypto.math.isCanGenerate(1100)[0]) {
+            document.getElementById("error_out").innerHTML = "Недостаточно случайных данных, подвигайте мышью.";
+            return;
+        }
         var keyGenerationTimes = [], encryptionTimes = [], decryptionTimes = [];
-        for(var keySize in generatedPrimeNumbers) {
-            var result = testEncryptDecryptTime(keySize);
-            keyGenerationTimes.push(result.keyGeneration);
-            encryptionTimes.push(result.textEncrypt);
-            decryptionTimes.push(result.textDecrypt);
+        try {
+            for(var keySize in generatedPrimeNumbers) {
+                var result = testEncryptDecryptTime(keySize);
+                keyGenerationTimes.push(result.keyGeneration);
+                encryptionTimes.push(result.textEncrypt);
+                decryptionTimes.push(result.textDecrypt);
+            }
+        } catch (e) {
+            document.getElementById("error_out").innerHTML = e.toString();
+            return;
         }
 
         var data = {
@@ -266,6 +276,7 @@
     <button id="powByMod_Button" onclick="testPowByMod()">Test power by mod</button>
     <button id="generationKey_Button" onclick="testGenerateKey()">Test key generation</button>
     <button id="Perfomance_Button" onclick="testPerformance()">Test perfomance</button>
+<div id="error_out"></div>
 <div id="out"></div>
 <canvas id="myChart" width="1080" height="660"></canvas>
 
