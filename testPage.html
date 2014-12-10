@@ -217,6 +217,7 @@
         var keyGenerationTimes = [], encryptionTimes = [], decryptionTimes = [];
         try {
             for(var keySize in generatedPrimeNumbers) {
+                Decimal.config({ precision: Math.floor(keySize / 3.32 + 1) * 2});
                 var result = testEncryptDecryptTime(keySize);
                 keyGenerationTimes.push(result.keyGeneration);
                 encryptionTimes.push(result.textEncrypt);
