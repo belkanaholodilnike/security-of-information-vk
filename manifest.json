@@ -1,4 +1,10 @@
 {
+  "icons": { "16": "images/icons/main-icon16.png",
+    "48": "images/icons/main-icon48.png",
+    "128": "images/icons/main-icon128.png",
+    "256": "images/icons/main-icon256.png"
+  },
+
   "manifest_version": 2,
 
   "name": "SVkMessage",
