@@ -3,7 +3,7 @@
 
   "name": "SVkMessage",
   "description": "The extension allows to encrypt vk messages using asymmetrical algorithms.",
-  "version": "0.1",
+  "version": "0.2",
 
   "icons": { "16": "images/icons/main-icon16.png",
     "48": "images/icons/main-icon48.png",
