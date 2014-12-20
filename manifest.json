@@ -1,15 +1,15 @@
 {
+  "manifest_version": 2,
+
+  "name": "SVkMessage",
+  "description": "The extension allows to encrypt vk messages using asymmetrical algorithms.",
+  "version": "0.1",
+
   "icons": { "16": "images/icons/main-icon16.png",
     "48": "images/icons/main-icon48.png",
     "128": "images/icons/main-icon128.png",
     "256": "images/icons/main-icon256.png"
   },
-
-  "manifest_version": 2,
-
-  "name": "SVkMessage",
-  "description": "The extension allows to encrypt vk messages by asymmetrical encryption.",
-  "version": "0.1",
 
   "background": {
     "scripts": ["decimal.js", "keystorage.js", "background.js"],

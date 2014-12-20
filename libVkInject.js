@@ -278,6 +278,28 @@ svkm.basic.preprocessMessage = function(msgElement) {
     $(msgElement).removeClass('unsecure-message');
     $(msgElement).addClass('encrypted-message');
     msgElement.textContent = '*encrypted*';
+    msgElement.onclick = function() {
+      var msgCrypted = messageEntry.text;
+      svkm.basic.executeWithMyKey(function (myKey) {
+        if (!myKey) {
+          console.log("Couldn't decrypt message, since my private key is not yet generated");
+          return;
+        }
+        var decryptedText = null;
+        var closeHandler = svkm.ui.showInfoMessageWithSpinner("Подождите, пока сообщение расшифровывается...");
+        if (messageEntry.direction == 'in') {
+          decryptedText = svkm.crypto.elgamal.decryptReceived(msgCrypted, myKey);
+        } else {
+          decryptedText = svkm.crypto.elgamal.decryptSended(msgCrypted, myKey);
+        }
+        closeHandler();
+        svkm.ui.showInfoMessage("Готово!", 1000);
+        msgElement.textContent = decryptedText;
+        $(msgElement).removeClass("encrypted-message");
+        $(msgElement).addClass("secure-message");
+      });
+    }
+
   } else if (msgText.lastIndexOf(MESSAGE_TAG_KEY_REFUSE, 0) === 0) {
     messageEntry.type = MESSAGE_TAG_KEY_REFUSE;
     hideMessageElement(msgElement);
