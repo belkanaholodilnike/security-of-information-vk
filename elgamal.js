@@ -115,11 +115,11 @@ svkm.crypto.math.isProbablePrime = function (n, k) {
 };
 
 svkm.crypto.elgamal.isReadyToGenerateKeyPair = function() {
-  return svkm.crypto.math.isCanGenerate(7 * 10);
+  return svkm.crypto.math.isCanGenerate(7 * 20);
 };
 
 svkm.crypto.elgamal.isReadyToEncryptMessage = function() {
-  return svkm.crypto.math.isCanGenerate(7 * 10);
+  return svkm.crypto.math.isCanGenerate(7 * 20);
 };
 
 svkm.crypto.elgamal.generateKeyPair = function () {

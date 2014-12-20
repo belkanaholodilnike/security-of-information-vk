@@ -166,16 +166,19 @@ function getMessageDirection(msgElement) {
 
 svkm.basic.executeWithMyKeyAndGenerateKeyIfNoKeyComputed = function(callback) {
   var removeMsgCallback = svkm.ui.showInfoMessageWithSpinner("Подождите, идет генерация ключа...");
-  svkm.basic.executeWithMyKey(function (myKey) {
-    if (!myKey) {
-      myKey = svkm.crypto.elgamal.generateKeyPair();
-      svkm.ui.showInfoMessage("Готово!", 3000);
-      chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey},
-        function (response) {
-        });
-    }
-    callback(myKey);
-    removeMsgCallback();
+  setTimeout(function() {
+    svkm.basic.executeWithMyKey(function (myKey) {
+      if (!myKey) {
+        myKey = svkm.crypto.elgamal.generateKeyPair();
+        chrome.runtime.sendMessage({eventName: "insertMyKey", key: myKey},
+          function (response) {
+          });
+        removeMsgCallback();
+      } else {
+        removeMsgCallback();
+      }
+      callback(myKey);
+    }, 0);
   });
 }
 
@@ -198,16 +201,18 @@ svkm.basic.processMessage = function (msgElement) {
           }
           var decryptedText = null;
           var closeHandler = svkm.ui.showInfoMessageWithSpinner("Подождите, пока сообщение расшифровывается...");
-          if (msgPreprocessed.direction == 'in') {
-            decryptedText = svkm.crypto.elgamal.decryptReceived(msgCrypted, myKey);
-          } else {
-            decryptedText = svkm.crypto.elgamal.decryptSended(msgCrypted, myKey);
-          }
-          closeHandler();
-          svkm.ui.showInfoMessage("Готово!", 1000);
-          msgElement.textContent = decryptedText;
-          $(msgElement).removeClass("encrypted-message");
-          $(msgElement).addClass("secure-message");
+          setTimeout(function() {
+            if (msgPreprocessed.direction == 'in') {
+              decryptedText = svkm.crypto.elgamal.decryptReceived(msgCrypted, myKey);
+            } else {
+              decryptedText = svkm.crypto.elgamal.decryptSended(msgCrypted, myKey);
+            }
+            closeHandler();
+            svkm.ui.showInfoMessage("Готово!", 1000);
+            msgElement.textContent = decryptedText;
+            $(msgElement).removeClass("encrypted-message");
+            $(msgElement).addClass("secure-message");
+          }, 0);
         });
       }
 
@@ -221,11 +226,15 @@ svkm.basic.processMessage = function (msgElement) {
       if (isMessageNew(msgId)) {
         if (confirm('Собеседник запросил ваш открытый ключ, что позволит ему шифровать сообщения, посылаемые вам. ' +
           'Разрешить передачу ключа?')) {
-          svkm.basic.doWhenCanGenerateKey(svkm.basic.executeWithMyKeyAndGenerateKeyIfNoKeyComputed(function(myKey) {
-            var myKeyString = JSON.stringify(myKey['pubKey']);
-            svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKeyString);
-            svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000);
-          }));
+          svkm.basic.doWhenCanGenerateKey(
+            svkm.basic.executeWithMyKeyAndGenerateKeyIfNoKeyComputed(function(myKey) {
+              if (!myKey) {
+                return;
+              }
+              var myKeyString = JSON.stringify(myKey['pubKey']);
+              svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_RESPONSE + myKeyString);
+              svkm.ui.showInfoMessage("Ключ был послан собеседнику", 3000);
+            }));
         } else {
           svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REFUSE);
         }
@@ -251,7 +260,7 @@ svkm.basic.processMessage = function (msgElement) {
         var userId = svkm.basic.getParameterByName("sel");
         chrome.runtime.sendMessage({eventName: "insertKeyForUser", userId: userId, key: key},
           function (response) {
-            svkm.ui.enableSendingButton(svkm.ui.getSecureIframe());
+            svkm.ui.enableSendingAndShowHashesButton(svkm.ui.getSecureIframe());
           });
         console.log("Received key " + JSON.stringify(key) + " for user " + userId);
       }
@@ -380,12 +389,14 @@ svkm.basic.sendMessage = function (text) {
       svkm.basic.executeWithUserPublicKey(function(publicKey) {
         svkm.basic.executeWithMyKeyAndGenerateKeyIfNoKeyComputed(function (myKey) {
           var closeHandler = svkm.ui.showInfoMessageWithSpinner("Подождите, пока сообщение шифруется...");
-          var encryptedText = svkm.crypto.elgamal.encrypt(text, publicKey, myKey);
-          closeHandler();
-          svkm.ui.showInfoMessage("Готово!", 1000);
-          imEditable.textContent = MESSAGE_TAG_ENCRYPTED + encryptedText;
-          nextMessageFromMeNeedToDecrypt = true;
-          document.getElementById("im_send").dispatchEvent(new Event("click"));
+          setTimeout(function() {
+            var encryptedText = svkm.crypto.elgamal.encrypt(text, publicKey, myKey);
+            closeHandler();
+            svkm.ui.showInfoMessage("Готово!", 1000);
+            imEditable.textContent = MESSAGE_TAG_ENCRYPTED + encryptedText;
+            nextMessageFromMeNeedToDecrypt = true;
+            document.getElementById("im_send").dispatchEvent(new Event("click"));
+          }, 0);
         });
       });
     });
@@ -469,8 +480,39 @@ svkm.basic.exchangeKeys = function () {
   svkm.basic.sendMessageUnencrypted(MESSAGE_TAG_KEY_REQUEST);
 }
 
+svkm.basic.showKeysHashes = function () {
+  svkm.basic.executeWithMyKey(function(myKey) {
+    svkm.basic.executeWithUserPublicKey(function(userPubKey) {
+      var myHash = '---';
+      if (myKey !== null) {
+        var a = myKey['pubKey'][0].toString();
+        var b = myKey['pubKey'][1].toString();
+        var c = myKey['pubKey'][2].toString();
+        myHash = CryptoJS.SHA3(a + b + c).toString(CryptoJS.enc.Base64);
+      }
+      var userHash = '---';
+      if (userPubKey !== null) {
+        var a = userPubKey[0].toString();
+        var b = userPubKey[1].toString();
+        var c = userPubKey[2].toString();
+        userHash = CryptoJS.SHA3(a + b + c).toString(CryptoJS.enc.Base64);
+      }
+
+      var msg = "Чтобы проверить, что ключ вашего собеседника не был подменен," +
+        " свяжитесь с ним по защищенному каналу связи (например, встретьтесь вживую) и сравните" +
+        " приведенные ниже хэши от открытых ключей.\n\n" +
+        "Мой хэш: \n\t" + myHash + "\n\n" + "Хэш собеседника: \n\t" + userHash;
+      alert(msg);
+    });
+  });
+}
+
 svkm.basic.getExchangeKeysButton = function (iframe) {
   return iframe.contentWindow.document.getElementById("svkm_exchange_keys_button");
+}
+
+svkm.basic.getShowKeyHashesButton = function (iframe) {
+  return iframe.contentWindow.document.getElementById("svkm_show_keys_hashes_button");
 }
 
 svkm.basic.getSecureTextarea = function (iframe) {
@@ -485,12 +527,14 @@ svkm.basic.getSendMessageTextarea = function(iframe) {
   return iframe.contentWindow.document.getElementById("svkm_message");
 }
 
-svkm.ui.disableSendingButton = function (iframe) {
+svkm.ui.disableSendingAndShowHashesButton = function (iframe) {
   svkm.basic.getSendMessageButton(iframe).disabled = true;
+  svkm.basic.getShowKeyHashesButton(iframe).disabled = true;
 };
 
-svkm.ui.enableSendingButton = function (iframe) {
+svkm.ui.enableSendingAndShowHashesButton = function (iframe) {
   svkm.basic.getSendMessageButton(iframe).disabled = false;
+  svkm.basic.getShowKeyHashesButton(iframe).disabled = false;
 };
 
 svkm.ui.getSecureIframe = function() {
@@ -577,6 +621,7 @@ svkm.basic.replaceVkImEditable = function () {
   iframe.setAttribute("src", chrome.extension.getURL('frame.html'));
   iframe.onload = function () {
     svkm.basic.getSendMessageButton(iframe).addEventListener("click", onSendButtonClick);
+    svkm.basic.getShowKeyHashesButton(iframe).addEventListener("click", svkm.basic.showKeysHashes);
     svkm.basic.getExchangeKeysButton(iframe).addEventListener("click", svkm.basic.exchangeKeys);
     var textarea = svkm.basic.getSecureTextarea(iframe);
     $(textarea).keypress(function(event) {
@@ -591,9 +636,9 @@ svkm.basic.replaceVkImEditable = function () {
       function(response) {
         console.log("Public key for user " + svkm.basic.getParameterByName("sel") + " is " + response);
         if (response.result == "no") {
-          svkm.ui.disableSendingButton(iframe);
+          svkm.ui.disableSendingAndShowHashesButton(iframe);
         } else {
-          svkm.ui.enableSendingButton(iframe);
+          svkm.ui.enableSendingAndShowHashesButton(iframe);
         }
       });
   };
